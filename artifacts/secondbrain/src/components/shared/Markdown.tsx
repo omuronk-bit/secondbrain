@@ -41,11 +41,35 @@ const H_CLS = [
   'text-sm font-semibold mt-2 mb-1',
 ];
 
-export function Markdown({ content }: { content: string }) {
+// Flip the index-th task checkbox in the raw markdown (document order).
+export function toggleCheckbox(md: string, index: number): string {
+  const lines = (md || '').replace(/\r\n/g, '\n').split('\n');
+  let n = -1;
+  for (let i = 0; i < lines.length; i++) {
+    const m = lines[i].match(/^(\s*(?:[-*]|\d+\.)\s+)\[([ xX])\](.*)$/);
+    if (!m) continue;
+    n++;
+    if (n === index) {
+      const checked = m[2].toLowerCase() === 'x';
+      lines[i] = `${m[1]}[${checked ? ' ' : 'x'}]${m[3]}`;
+      break;
+    }
+  }
+  return lines.join('\n');
+}
+
+export function Markdown({
+  content,
+  onToggleCheckbox,
+}: {
+  content: string;
+  onToggleCheckbox?: (index: number) => void;
+}) {
   const lines = (content || '').replace(/\r\n/g, '\n').split('\n');
   const blocks: ReactNode[] = [];
   let i = 0;
   let key = 0;
+  let cbIndex = 0;
 
   while (i < lines.length) {
     const line = lines[i];
@@ -99,10 +123,20 @@ export function Markdown({ content }: { content: string }) {
         const cb = raw.match(/^\[([ xX])\]\s+(.*)$/);
         if (cb) {
           hasCheckbox = true;
+          const idx = cbIndex++;
+          const checked = cb[1].toLowerCase() === 'x';
           items.push(
             <li key={items.length} className="flex items-start gap-2 list-none">
-              <input type="checkbox" readOnly checked={cb[1].toLowerCase() === 'x'} className="mt-1 accent-primary" />
-              <span>{inline(cb[2], `li${key}-${items.length}`)}</span>
+              <input
+                type="checkbox"
+                checked={checked}
+                readOnly={!onToggleCheckbox}
+                onChange={onToggleCheckbox ? () => onToggleCheckbox(idx) : undefined}
+                className={`mt-1 w-4 h-4 accent-primary${onToggleCheckbox ? ' cursor-pointer' : ''}`}
+              />
+              <span className={checked ? 'text-muted-foreground line-through' : undefined}>
+                {inline(cb[2], `li${key}-${items.length}`)}
+              </span>
             </li>,
           );
         } else {

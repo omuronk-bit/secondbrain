@@ -5,7 +5,7 @@ import {
 import {
   listNotes, getNote, createNote, saveNote, deleteNote, NoteListItem,
 } from '../lib/api';
-import { Markdown } from '../components/shared/Markdown';
+import { Markdown, toggleCheckbox } from '../components/shared/Markdown';
 import { cn } from '../lib/utils';
 
 const DOMAINS: [string, string][] = [
@@ -99,6 +99,25 @@ export const Notes = () => {
     }
   }
 
+  // Tap a checkbox in preview → flip it in the markdown and persist immediately.
+  async function onToggle(idx: number) {
+    if (!editor) return;
+    const body = toggleCheckbox(editor.body, idx);
+    setEditor({ ...editor, body });
+    if (editor.id) {
+      try {
+        await saveNote(editor.id, body, editor.title);
+        setSavedFlash(true);
+        setTimeout(() => setSavedFlash(false), 1200);
+      } catch {
+        /* leave the optimistic toggle; user can hit Save */
+        setDirty(true);
+      }
+    } else {
+      setDirty(true);
+    }
+  }
+
   async function remove() {
     if (!editor?.id) {
       setEditor(null);
@@ -171,7 +190,7 @@ export const Notes = () => {
             />
           ) : (
             <div className="min-h-[40vh]">
-              {editor.body.trim() ? <Markdown content={editor.body} /> : <p className="text-sm text-muted-foreground/50 italic">Nothing yet — tap Edit to write.</p>}
+              {editor.body.trim() ? <Markdown content={editor.body} onToggleCheckbox={onToggle} /> : <p className="text-sm text-muted-foreground/50 italic">Nothing yet — tap Edit to write.</p>}
             </div>
           )}
         </div>
