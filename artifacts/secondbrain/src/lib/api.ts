@@ -68,6 +68,21 @@ export const captureApi = (
     r.json(),
   );
 
+/** Persist a user override of an item's recommended action. */
+export const setItemAction = (
+  id: string,
+  action: string,
+): Promise<{ ok: boolean; action: string }> =>
+  apiFetch(`/items/${encodeURIComponent(id)}/action`, {
+    method: 'POST',
+    body: JSON.stringify({ action }),
+  }).then((r) => r.json());
+
+/** Open an item's source (article/video/podcast/Gmail) in a new tab. */
+export const openItemLink = (item: Item): void => {
+  if (item.originalUrl) window.open(item.originalUrl, '_blank', 'noopener,noreferrer');
+};
+
 /** Validate base+token before saving — used by the connect screen. */
 export async function checkConnection(base: string, token: string): Promise<void> {
   const res = await fetch(`${(base || DEFAULT_BASE).replace(/\/$/, '')}/today`, {

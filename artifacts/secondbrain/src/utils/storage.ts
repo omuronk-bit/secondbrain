@@ -40,6 +40,13 @@ export const updateItemStatus = (id: string, status: Item['status']): void => {
   saveItems(updated);
 };
 
+/** Update a single item's recommended action and persist atomically. */
+export const updateItemAction = (id: string, action: Item['recommendedAction']): void => {
+  const current = getItems();
+  const updated = current.map(i => (i.id === id ? { ...i, recommendedAction: action } : i));
+  saveItems(updated);
+};
+
 // ─── Sources ─────────────────────────────────────────────────────────────────
 // TODO Phase 2: SELECT * FROM sources WHERE user_id = auth.uid()
 export const getSources = (): Source[] =>

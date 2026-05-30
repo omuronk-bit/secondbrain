@@ -1,9 +1,11 @@
-import { RecommendedAction, Confidence } from '../../types';
+import { RecommendedAction, Confidence, ContentType } from '../../types';
 import { cn } from '../../lib/utils';
 
 interface Props {
   action: RecommendedAction;
   confidence?: Confidence;
+  /** When set, deep_consume reads as Listen/Watch/Read and segment as Best part. */
+  contentType?: ContentType;
   className?: string;
 }
 
@@ -14,8 +16,20 @@ const CONFIG: Record<RecommendedAction, { label: string; cls: string }> = {
   deep_consume: { label: 'Deep Read', cls: 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/25' },
 };
 
-export const RecommendationBadge = ({ action, confidence = 'high', className }: Props) => {
-  const { label, cls } = CONFIG[action] ?? CONFIG.skip;
+/** Content-aware label so deep_consume reads naturally per medium. */
+export function actionLabel(action: RecommendedAction, contentType?: ContentType): string {
+  if (action === 'deep_consume') {
+    if (contentType === 'podcast') return 'Listen';
+    if (contentType === 'youtube') return 'Watch';
+    return 'Read';
+  }
+  if (action === 'segment') return 'Best part';
+  return CONFIG[action]?.label ?? CONFIG.skip.label;
+}
+
+export const RecommendationBadge = ({ action, confidence = 'high', contentType, className }: Props) => {
+  const { cls } = CONFIG[action] ?? CONFIG.skip;
+  const label = actionLabel(action, contentType);
   return (
     <span
       className={cn(

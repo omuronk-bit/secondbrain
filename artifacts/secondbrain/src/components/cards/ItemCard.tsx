@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Bookmark, Star, X } from 'lucide-react';
 import { Item, Source } from '../../types';
-import { RecommendationBadge } from '../shared/RecommendationBadge';
+import { ActionControl } from '../shared/ActionControl';
 import { ScoreDisplay } from '../shared/ScoreDisplay';
 import { ContentIcon } from '../shared/ContentIcon';
 import { cn } from '../../lib/utils';
@@ -76,7 +76,7 @@ export const ItemCard = ({ item, source, compact = false, saved: savedProp, memo
             {item.title}
           </h3>
         </div>
-        <RecommendationBadge action={item.recommendedAction} confidence={item.confidence} className="shrink-0 mt-0.5" />
+        <ActionControl item={item} className="mt-0.5" />
       </div>
 
       <p className={cn('text-sm text-muted-foreground leading-relaxed', compact && 'line-clamp-2')}>

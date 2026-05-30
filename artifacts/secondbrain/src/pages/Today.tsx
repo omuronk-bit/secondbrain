@@ -7,6 +7,7 @@ import {
   Bookmark, Star, X, ChevronUp,
 } from 'lucide-react';
 import { RecommendationBadge } from '../components/shared/RecommendationBadge';
+import { ActionControl } from '../components/shared/ActionControl';
 import { ScoreDisplay } from '../components/shared/ScoreDisplay';
 import { EmptyState } from '../components/shared/EmptyState';
 import { ContentIcon } from '../components/shared/ContentIcon';
@@ -92,7 +93,7 @@ const MustConsumeCard = ({ item, source, compact, state, onAction, onToggleSumma
           </div>
           <h3 className="font-bold text-[15px] leading-snug text-foreground">{item.title}</h3>
         </div>
-        <RecommendationBadge action={item.recommendedAction} confidence={item.confidence} className="shrink-0 mt-0.5" />
+        <ActionControl item={item} className="mt-0.5" />
       </div>
 
       {/* why now — always visible */}
@@ -234,7 +235,7 @@ const SkimCard = ({ item, source, compact, state, onAction, onToggleSummary }: S
           </div>
           <h3 className="font-semibold text-sm leading-snug text-foreground">{item.title}</h3>
         </div>
-        <RecommendationBadge action={item.recommendedAction} confidence={item.confidence} className="shrink-0" />
+        <ActionControl item={item} />
       </div>
 
       {!compact && (
