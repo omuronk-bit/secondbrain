@@ -15,6 +15,7 @@ import { getCaptures, saveCaptures, getSources, saveSources } from '../utils/sto
 import { captureApi } from '../lib/api';
 import { FileUpload } from '../components/capture/FileUpload';
 import { VoiceRecorder } from '../components/capture/VoiceRecorder';
+import { MeetingCapture } from '../components/capture/MeetingCapture';
 import {
   CapturedItem, CaptureCategory, Priority, VoiceExtraction, Source
 } from '../types';
@@ -329,11 +330,12 @@ const sourceSchema = z.object({
 
 // ─── mode config ──────────────────────────────────────────────────────────────
 
-type CaptureMode = 'link' | 'voice' | 'text' | 'file' | 'source';
+type CaptureMode = 'link' | 'voice' | 'meeting' | 'text' | 'file' | 'source';
 
 const MODES: { id: CaptureMode; icon: React.ReactNode; label: string }[] = [
   { id: 'link', icon: <Link2 className="w-5 h-5" />, label: 'Link' },
   { id: 'voice', icon: <Mic className="w-5 h-5" />, label: 'Voice' },
+  { id: 'meeting', icon: <Users className="w-5 h-5" />, label: 'Meeting' },
   { id: 'text', icon: <FileText className="w-5 h-5" />, label: 'Text' },
   { id: 'file', icon: <Upload className="w-5 h-5" />, label: 'File' },
   { id: 'source', icon: <PlusCircle className="w-5 h-5" />, label: 'Source' },
@@ -596,6 +598,18 @@ export const Capture = () => {
             className="bg-card border rounded-2xl p-5 shadow-sm space-y-4">
             <h2 className="font-bold text-base text-foreground">Voice note</h2>
             <VoiceRecorder onSaved={(title) => addCapture({ type: 'voice', title, topics: [] })} />
+          </motion.div>
+        )}
+
+        {/* ══ MEETING ══ */}
+        {mode === 'meeting' && (
+          <motion.div key="meeting" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
+            className="bg-card border rounded-2xl p-5 shadow-sm space-y-4">
+            <div>
+              <h2 className="font-bold text-base text-foreground">Meeting</h2>
+              <p className="text-xs text-muted-foreground">Turkish transcription with speaker labels → summary, decisions & action items.</p>
+            </div>
+            <MeetingCapture onSaved={(title) => addCapture({ type: 'voice', title, topics: ['meeting'] })} />
           </motion.div>
         )}
 

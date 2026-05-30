@@ -106,6 +106,38 @@ export async function uploadFile(file: Blob, filename?: string): Promise<UploadR
   return res.json();
 }
 
+export interface MeetingJob {
+  status: 'processing' | 'done' | 'error';
+  job_id?: string;
+  title?: string;
+  summary?: string;
+  speakers?: number;
+  duration?: number;
+  transcript?: string;
+  path?: string;
+  error?: string;
+}
+
+/** Upload meeting audio for async Deepgram transcription + diarization. */
+export async function uploadMeeting(file: Blob, filename?: string): Promise<{ job_id: string }> {
+  const fd = new FormData();
+  fd.append('file', file, filename || (file as File).name || 'meeting.m4a');
+  const res = await fetch(`${getApiBase()}/meetings`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${getToken()}` },
+    body: fd,
+  });
+  if (!res.ok) {
+    const body = await res.text().catch(() => '');
+    throw new Error(`API ${res.status}: ${body.slice(0, 200) || res.statusText}`);
+  }
+  return res.json();
+}
+
+/** Poll a meeting transcription job. */
+export const getMeeting = (jobId: string): Promise<MeetingJob> =>
+  apiFetch(`/meetings/${encodeURIComponent(jobId)}`).then((r) => r.json());
+
 /** Validate base+token before saving — used by the connect screen. */
 export async function checkConnection(base: string, token: string): Promise<void> {
   const res = await fetch(`${(base || DEFAULT_BASE).replace(/\/$/, '')}/today`, {
