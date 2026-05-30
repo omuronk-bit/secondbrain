@@ -138,6 +138,43 @@ export async function uploadMeeting(file: Blob, filename?: string): Promise<{ jo
 export const getMeeting = (jobId: string): Promise<MeetingJob> =>
   apiFetch(`/meetings/${encodeURIComponent(jobId)}`).then((r) => r.json());
 
+// ───────────────────────── notes ─────────────────────────
+export interface NoteListItem {
+  id: string;
+  title: string;
+  domain: string;
+  date: string;
+  snippet: string;
+  updated: number;
+  tags: string[];
+}
+export interface NoteDetail {
+  id: string;
+  title: string;
+  domain?: string;
+  date: string;
+  tags: string[];
+  body: string;
+}
+
+// Encode each path segment but keep the slashes (the API uses a :path route).
+const encNote = (id: string) => id.split('/').map(encodeURIComponent).join('/');
+
+export const listNotes = (q = '', domain = ''): Promise<{ notes: NoteListItem[]; total: number }> =>
+  apiFetch(`/notes?q=${encodeURIComponent(q)}&domain=${encodeURIComponent(domain)}`).then((r) => r.json());
+
+export const getNote = (id: string): Promise<NoteDetail> =>
+  apiFetch(`/notes/${encNote(id)}`).then((r) => r.json());
+
+export const createNote = (title: string, body = '', domain = '00-inbox'): Promise<{ ok: boolean; id: string }> =>
+  apiFetch('/notes', { method: 'POST', body: JSON.stringify({ title, body, domain }) }).then((r) => r.json());
+
+export const saveNote = (id: string, body: string, title?: string): Promise<{ ok: boolean; id: string }> =>
+  apiFetch(`/notes/${encNote(id)}`, { method: 'PUT', body: JSON.stringify({ body, title }) }).then((r) => r.json());
+
+export const deleteNote = (id: string): Promise<{ ok: boolean }> =>
+  apiFetch(`/notes/${encNote(id)}`, { method: 'DELETE' }).then((r) => r.json());
+
 /** Validate base+token before saving — used by the connect screen. */
 export async function checkConnection(base: string, token: string): Promise<void> {
   const res = await fetch(`${(base || DEFAULT_BASE).replace(/\/$/, '')}/today`, {

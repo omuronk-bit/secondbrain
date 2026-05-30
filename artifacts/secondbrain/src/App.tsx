@@ -8,6 +8,7 @@ import { Media } from "./pages/Media";
 import { Ask } from "./pages/Ask";
 import { Library } from "./pages/Library";
 import { Analytics } from "./pages/Analytics";
+import { Notes } from "./pages/Notes";
 
 export default function App() {
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
@@ -33,6 +34,7 @@ export default function App() {
             <Route path="/capture" component={Capture} />
             <Route path="/media" component={Media} />
             <Route path="/ask" component={Ask} />
+            <Route path="/notes" component={Notes} />
             <Route path="/library" component={Library} />
             <Route path="/analytics" component={Analytics} />
             <Route path="/">

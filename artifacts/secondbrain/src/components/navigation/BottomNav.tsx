@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { Brain, Plus, Play, Search, BookOpen } from "lucide-react";
+import { Brain, Plus, Play, Search, BookOpen, NotebookPen } from "lucide-react";
 import { cn } from "../../lib/utils";
 
 export const BottomNav = () => {
@@ -8,8 +8,9 @@ export const BottomNav = () => {
   const navItems = [
     { href: "/today", icon: Brain, label: "Today" },
     { href: "/capture", icon: Plus, label: "Capture" },
-    { href: "/media", icon: Play, label: "Media" },
+    { href: "/notes", icon: NotebookPen, label: "Notes" },
     { href: "/ask", icon: Search, label: "Ask" },
+    { href: "/media", icon: Play, label: "Media" },
     { href: "/library", icon: BookOpen, label: "Library" },
   ];
 
