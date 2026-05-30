@@ -8,7 +8,7 @@ import {
 } from 'lucide-react';
 import { Item, Segment, Source } from '../types';
 import { getItems, getStorageItem, setStorageItem } from '../utils/storage';
-import { segments as allSegments, sources } from '../data/mockData';
+import { segments as allSegments, sources } from '../utils/mediaStore';
 import { RecommendationBadge } from '../components/shared/RecommendationBadge';
 import { EmptyState } from '../components/shared/EmptyState';
 import { ScoreDisplay } from '../components/shared/ScoreDisplay';

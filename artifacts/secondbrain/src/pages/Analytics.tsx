@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useLocation } from 'wouter';
 import { getItems, getSources, getFeedback } from '../utils/storage';
-import { segments, syntheses } from '../data/mockData';
+import { segments, syntheses } from '../utils/mediaStore';
+import { fetchStats, StatsResponse } from '../lib/api';
 import {
   ArrowLeft, BarChart2, TrendingUp, TrendingDown,
   Zap, AlertTriangle, CheckCircle2, Clock, Radio,
@@ -13,9 +14,16 @@ import { Item, Source } from '../types';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const MOCK_NOW = new Date('2025-05-30T23:59:59Z');
-const WEEK_AGO = new Date(MOCK_NOW.getTime() - 7 * 24 * 60 * 60 * 1000);
-const WEEK_LABEL = 'May 24 – 30, 2025';
+const NOW = new Date();
+const WEEK_AGO = new Date(NOW.getTime() - 7 * 24 * 60 * 60 * 1000);
+const FEEDBACK_LABELS: Record<string, string> = {
+  more_like_this: 'More like this', less_like_this: 'Less like this',
+  already_known: 'Already known', important_for_work: 'Work-critical',
+  useful: 'Useful', not_useful: 'Not useful', too_basic: 'Too basic',
+  personal_curiosity: 'Curiosity', wrong_reason: 'Wrong reason',
+};
+const fmtDay = (d: Date) => d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+const WEEK_LABEL = `${fmtDay(WEEK_AGO)} – ${fmtDay(NOW)}, ${NOW.getFullYear()}`;
 
 // ─── Analytics computation ────────────────────────────────────────────────────
 
@@ -34,7 +42,7 @@ function computeAnalytics(items: Item[], sources: Source[]) {
 
   const memoIds = new Set(syntheses.flatMap(s => s.savedItemIds));
   const memoCandidates = items.filter(i => memoIds.has(i.id)).length;
-  const segmentsConsumed = 2; // mock — 2 of 4 segments reviewed
+  const segmentsConsumed = 0;
 
   // Source quality
   const sourceStats = sources.map(src => {
@@ -61,14 +69,14 @@ function computeAnalytics(items: Item[], sources: Source[]) {
     .sort((a, b) => b[1] - a[1])
     .slice(0, 8);
 
-  // Feedback distribution (mock)
-  const MOCK_FEEDBACK = [
-    { type: 'more_like_this', label: 'More like this', count: 1 },
-    { type: 'less_like_this', label: 'Less like this', count: 1 },
-    { type: 'already_known',  label: 'Already known',  count: 1 },
-    { type: 'important_for_work', label: 'Work-critical', count: 1 },
-  ];
-  const totalFeedback = MOCK_FEEDBACK.reduce((s, f) => s + f.count, 0);
+  // Feedback distribution — real local feedback (empty until you rate items)
+  const feedback = getFeedback();
+  const fbCounts: Record<string, number> = {};
+  feedback.forEach(f => { fbCounts[f.feedbackType] = (fbCounts[f.feedbackType] || 0) + 1; });
+  const feedbackBreakdown = Object.entries(fbCounts)
+    .map(([type, count]) => ({ type, label: FEEDBACK_LABELS[type] ?? type, count }))
+    .sort((a, b) => b.count - a.count);
+  const totalFeedback = feedback.length;
   const feedbackCoverage = items.length > 0 ? totalFeedback / items.length : 0;
 
   const reviewRate = items.length > 0 ? reviewed.length / items.length : 0;
@@ -97,7 +105,7 @@ function computeAnalytics(items: Item[], sources: Source[]) {
     sourceStats,
     avgSourceQuality,
     topTopics,
-    MOCK_FEEDBACK,
+    feedbackBreakdown,
     totalFeedback,
     feedbackCoverage,
     reviewRate,
@@ -182,6 +190,7 @@ function ContentTypeIcon({ type }: { type: string }) {
 export const Analytics = () => {
   const [, navigate] = useLocation();
   const [mounted, setMounted] = useState(false);
+  const [stats, setStats] = useState<StatsResponse | null>(null);
 
   const items   = getItems();
   const sources = getSources();
@@ -189,8 +198,12 @@ export const Analytics = () => {
 
   useEffect(() => {
     const t = setTimeout(() => setMounted(true), 150);
+    fetchStats().then(setStats).catch(() => { /* keep computed fallback */ });
     return () => clearTimeout(t);
   }, []);
+
+  // Canonical headline numbers from /api/stats (fall back to computed if not loaded).
+  const totalSegments = stats?.segments ?? segments.length;
 
   const scoreColor = data.score >= 70 ? 'text-emerald-500' : data.score >= 50 ? 'text-amber-500' : 'text-rose-500';
   const scoreLabel = data.score >= 70 ? 'Strong' : data.score >= 50 ? 'Developing' : 'Early stage';
@@ -276,7 +289,7 @@ export const Analytics = () => {
               { label: 'Saved',                val: data.saved,      color: 'bg-emerald-500',   pctOf: data.totalItems },
               { label: 'Dismissed',            val: data.dismissed,  color: 'bg-rose-500',      pctOf: data.totalItems },
               { label: 'Flagged to skip',      val: data.skipItems,  color: 'bg-orange-400',    pctOf: data.totalItems },
-              { label: 'Segments consumed',    val: data.segmentsConsumed, color: 'bg-violet-500', pctOf: segments.length },
+              { label: 'Segments consumed',    val: data.segmentsConsumed, color: 'bg-violet-500', pctOf: totalSegments },
             ].map(({ label, val, color, pctOf }) => (
               <div key={label} className="flex items-center gap-3">
                 <span className="text-xs text-muted-foreground w-36 shrink-0">{label}</span>
@@ -370,7 +383,10 @@ export const Analytics = () => {
               <AnimBar value={data.totalFeedback} max={data.totalItems} color="bg-primary" mounted={mounted} />
             </div>
             <div className="space-y-2 pt-1 border-t border-border/40">
-              {data.MOCK_FEEDBACK.map(fb => {
+              {data.feedbackBreakdown.length === 0 && (
+                <p className="text-xs text-muted-foreground/70 italic">No feedback yet — rate items (👍/👎) to tune your recommendations.</p>
+              )}
+              {data.feedbackBreakdown.map(fb => {
                 const fbColor = fb.type === 'more_like_this' || fb.type === 'important_for_work'
                   ? 'text-emerald-500' : fb.type === 'less_like_this' ? 'text-rose-500' : 'text-amber-500';
                 return (

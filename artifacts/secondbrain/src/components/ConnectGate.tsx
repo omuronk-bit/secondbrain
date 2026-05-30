@@ -6,9 +6,12 @@ import {
   getToken,
   setConfig,
   fetchToday,
+  fetchSegments,
+  fetchSources,
   checkConnection,
 } from '../lib/api';
-import { saveItems } from '../utils/storage';
+import { saveItems, saveSources } from '../utils/storage';
+import { setMediaData } from '../utils/mediaStore';
 import { cn } from '../lib/utils';
 
 type Phase = 'need-config' | 'connecting' | 'ready' | 'error';
@@ -29,6 +32,14 @@ export function ConnectGate({ children }: { children: ReactNode }) {
     try {
       const data = await fetchToday();
       saveItems(data.items);
+      // Best-effort: real segments + sources for Media & Analytics (never block the app).
+      try {
+        const [seg, src] = await Promise.all([fetchSegments(), fetchSources()]);
+        setMediaData(seg.segments, src.sources);
+        saveSources(src.sources);
+      } catch {
+        /* leave media data empty if these fail */
+      }
       setPhase('ready');
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));

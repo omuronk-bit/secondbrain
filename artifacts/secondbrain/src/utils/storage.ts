@@ -3,7 +3,7 @@
 // Auth context (user ID) must be injected once Supabase auth is set up.
 
 import { Item, Feedback, CapturedItem, Source } from '../types';
-import { items, sources, defaultFeedback, defaultCaptures } from '../data/mockData';
+import { items, defaultCaptures } from '../data/mockData';
 
 // ─── Generic storage helpers ─────────────────────────────────────────────────
 
@@ -50,7 +50,7 @@ export const updateItemAction = (id: string, action: Item['recommendedAction']):
 // ─── Sources ─────────────────────────────────────────────────────────────────
 // TODO Phase 2: SELECT * FROM sources WHERE user_id = auth.uid()
 export const getSources = (): Source[] =>
-  getStorageItem('secondbrain_sources', sources);
+  getStorageItem('secondbrain_sources', []);
 
 // TODO Phase 2: UPSERT sources
 export const saveSources = (newSources: Source[]): void =>
@@ -70,7 +70,7 @@ export const saveCaptures = (newCaptures: CapturedItem[]): void =>
 // TODO Phase 2: INSERT INTO feedback — feeds recommendation scoring pipeline
 // TODO Phase 2: pgvector: feedback signals adjust embedding weights per user
 export const getFeedback = (): Feedback[] =>
-  getStorageItem('secondbrain_feedback', defaultFeedback);
+  getStorageItem('secondbrain_feedback', []);
 
 export const saveFeedback = (newFeedback: Feedback[]): void =>
   setStorageItem('secondbrain_feedback', newFeedback);

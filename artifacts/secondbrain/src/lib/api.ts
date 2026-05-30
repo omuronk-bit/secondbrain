@@ -2,7 +2,7 @@
 // same-origin behind the Cloudflare tunnel, so the default base is `/api`.
 // The bearer token is entered once via the ConnectGate and kept in localStorage
 // (never baked into the bundle).
-import { Item } from '../types';
+import { Item, Segment, Source } from '../types';
 
 const BASE_KEY = 'sb_api_base';
 const TOKEN_KEY = 'sb_api_token';
@@ -56,6 +56,20 @@ export interface TodayResponse {
 
 export const fetchToday = (): Promise<TodayResponse> =>
   apiFetch('/today').then((r) => r.json());
+
+export interface StatsResponse extends TodayStats {
+  totalItems?: number;
+  byType?: Record<string, number>;
+  sources?: number;
+}
+export const fetchStats = (): Promise<StatsResponse> =>
+  apiFetch('/stats').then((r) => r.json());
+
+export const fetchSegments = (): Promise<{ segments: Segment[] }> =>
+  apiFetch('/segments').then((r) => r.json());
+
+export const fetchSources = (): Promise<{ sources: Source[] }> =>
+  apiFetch('/sources').then((r) => r.json());
 
 export const askApi = (question: string): Promise<{ answer: string }> =>
   apiFetch('/ask', { method: 'POST', body: JSON.stringify({ question }) }).then((r) => r.json());
