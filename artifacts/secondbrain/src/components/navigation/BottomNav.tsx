@@ -24,12 +24,19 @@ export const BottomNav = () => {
             key={item.href}
             href={item.href}
             className={cn(
-              "flex flex-col items-center justify-center w-full h-full space-y-1 transition-colors",
+              "flex flex-col items-center justify-center w-full h-full gap-0.5 transition-colors active:scale-95",
               isActive ? "text-primary" : "text-muted-foreground hover:text-foreground"
             )}
             data-testid={`nav-${item.label.toLowerCase()}`}
           >
-            <Icon className={cn("w-5 h-5", isActive && "stroke-[2.5px]")} />
+            <span
+              className={cn(
+                "flex items-center justify-center rounded-full px-4 py-1 transition-colors",
+                isActive && "bg-primary/10"
+              )}
+            >
+              <Icon className={cn("w-5 h-5", isActive && "stroke-[2.5px]")} />
+            </span>
             <span className={cn("text-[10px]", isActive && "font-semibold")}>
               {item.label}
             </span>
