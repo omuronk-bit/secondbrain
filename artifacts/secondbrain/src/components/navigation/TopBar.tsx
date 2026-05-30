@@ -12,8 +12,8 @@ export const TopBar = ({ theme, toggleTheme }: Props) => {
   const onAnalytics = location.startsWith('/analytics');
 
   return (
-    <header className="fixed top-0 left-0 right-0 h-14 bg-background border-b border-border flex items-center justify-between px-4 z-50">
-      <div className="font-bold text-lg tracking-tight">Secondbrain</div>
+    <header className="fixed top-0 left-0 right-0 h-[calc(3.5rem+env(safe-area-inset-top))] pt-[env(safe-area-inset-top)] bg-background/90 backdrop-blur-md border-b border-border flex items-center justify-between px-4 z-50">
+      <div className="font-black text-lg tracking-tight">SecondBrain</div>
       <div className="flex items-center gap-1">
         <Link href="/analytics">
           <button

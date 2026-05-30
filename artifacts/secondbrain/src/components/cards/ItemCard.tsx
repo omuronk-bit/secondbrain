@@ -7,6 +7,7 @@ import { ContentIcon } from '../shared/ContentIcon';
 import { cn } from '../../lib/utils';
 import { motion } from 'framer-motion';
 import { updateItemStatus } from '../../utils/storage';
+import { toast } from '../../hooks/use-toast';
 
 interface Props {
   item: Item;
@@ -35,9 +36,11 @@ export const ItemCard = ({ item, source, compact = false, saved: savedProp, memo
         const next = !localSaved;
         setLocalSaved(next);
         updateItemStatus(item.id, next ? 'saved' : 'new');
+        toast({ title: next ? 'Saved to Library' : 'Removed from saved' });
       } else if (action === 'dismiss') {
         setIsDismissed(true);
         updateItemStatus(item.id, 'dismissed');
+        toast({ title: 'Dismissed' });
       } else if (action === 'memo') {
         setLocalMemo(m => !m);
       }

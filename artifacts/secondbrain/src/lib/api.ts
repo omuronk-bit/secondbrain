@@ -60,6 +60,29 @@ export const fetchToday = (): Promise<TodayResponse> =>
 export const askApi = (question: string): Promise<{ answer: string }> =>
   apiFetch('/ask', { method: 'POST', body: JSON.stringify({ question }) }).then((r) => r.json());
 
+/** Stream an answer; onChunk receives the full text so far. Returns the final text. */
+export async function streamAsk(question: string, onChunk: (full: string) => void): Promise<string> {
+  const res = await fetch(`${getApiBase()}/ask/stream`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
+    body: JSON.stringify({ question }),
+  });
+  if (!res.ok || !res.body) {
+    const body = await res.text().catch(() => '');
+    throw new Error(`API ${res.status}: ${body.slice(0, 200) || res.statusText}`);
+  }
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+  let full = '';
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    full += decoder.decode(value, { stream: true });
+    onChunk(full);
+  }
+  return full;
+}
+
 export const captureApi = (
   text: string,
   type = 'note',

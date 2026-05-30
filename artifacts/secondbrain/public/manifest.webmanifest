@@ -1,0 +1,16 @@
+{
+  "name": "SecondBrain",
+  "short_name": "SecondBrain",
+  "description": "Your personal knowledge base — brief, ask, capture, notes, meetings.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f7f8fb",
+  "theme_color": "#f7f8fb",
+  "icons": [
+    { "src": "/icon.svg", "type": "image/svg+xml", "sizes": "any", "purpose": "any maskable" },
+    { "src": "/icon-192.png", "type": "image/png", "sizes": "192x192", "purpose": "maskable" },
+    { "src": "/icon-512.png", "type": "image/png", "sizes": "512x512", "purpose": "maskable" }
+  ]
+}

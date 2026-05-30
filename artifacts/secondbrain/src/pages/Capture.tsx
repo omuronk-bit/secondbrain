@@ -13,6 +13,7 @@ import {
 import { cn } from '../lib/utils';
 import { getCaptures, saveCaptures, getSources, saveSources } from '../utils/storage';
 import { captureApi } from '../lib/api';
+import { toast } from '../hooks/use-toast';
 import { FileUpload } from '../components/capture/FileUpload';
 import { VoiceRecorder } from '../components/capture/VoiceRecorder';
 import { MeetingCapture } from '../components/capture/MeetingCapture';
@@ -381,38 +382,22 @@ export const Capture = () => {
 
   // TODO Phase 2: Replace status progression with a real ingestion job watcher.
   // POST /api/captures → returns { id, jobId }. Poll GET /api/jobs/:jobId for status updates.
-  // Job pipeline: extract metadata → transcribe (if audio/video) → AI summarize → store in Postgres
-  // Status progression
-  const startProgression = useCallback((id: string) => {
-    const update = (status: CapturedItem['status'], delay: number) => {
-      setTimeout(() => {
-        setCaptures(prev => {
-          const next = prev.map(c => c.id === id ? { ...c, status } : c);
-          saveCaptures(next);
-          return next;
-        });
-      }, delay);
-    };
-    update('processing', 1500);
-    update('summarized', 4000);
-    update('ready', 6000);
-  }, []);
-
   const addCapture = useCallback((item: Omit<CapturedItem, 'id' | 'capturedAt' | 'status'>) => {
+    // Writes are real + instant now — no simulated progression. Land in 'ready'.
     const newItem: CapturedItem = {
       ...item,
       id: `cap_${Date.now()}`,
       capturedAt: new Date().toISOString(),
-      status: 'captured',
+      status: 'ready',
     };
     setCaptures(prev => {
       const next = [newItem, ...prev].slice(0, 20);
       saveCaptures(next);
       return next;
     });
-    startProgression(newItem.id);
+    toast({ title: 'Saved to your vault', description: newItem.title });
     return newItem.id;
-  }, [startProgression]);
+  }, []);
 
   const dismissCapture = useCallback((id: string) => {
     setCaptures(prev => {

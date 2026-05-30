@@ -15,7 +15,7 @@ export const BottomNav = () => {
   ];
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 h-[60px] bg-background border-t border-border flex items-center justify-around px-2 z-50 pb-safe md:hidden">
+    <nav className="fixed bottom-0 left-0 right-0 min-h-[60px] pb-[env(safe-area-inset-bottom)] bg-background/90 backdrop-blur-md border-t border-border flex items-center justify-around px-2 z-50 md:hidden">
       {navItems.map((item) => {
         const isActive = location.startsWith(item.href);
         const Icon = item.icon;

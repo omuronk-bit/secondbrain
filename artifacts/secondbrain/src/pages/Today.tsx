@@ -12,6 +12,10 @@ import { ScoreDisplay } from '../components/shared/ScoreDisplay';
 import { EmptyState } from '../components/shared/EmptyState';
 import { ContentIcon } from '../components/shared/ContentIcon';
 import { getItems, saveItems } from '../utils/storage';
+import { fetchToday } from '../lib/api';
+import { PullToRefresh } from '../components/shared/PullToRefresh';
+import { Swipeable } from '../components/shared/Swipeable';
+import { toast } from '../hooks/use-toast';
 import { segments, sources, syntheses, WORK_TOPICS, PERSONAL_TOPICS } from '../data/mockData';
 import { Item, Source } from '../types';
 import { cn } from '../lib/utils';
@@ -411,6 +415,17 @@ export const Today = () => {
   const getState = (id: string): ItemUIState =>
     uiState[id] ?? { saved: false, memo: false, dismissed: false, summaryExpanded: false };
 
+  // Pull-to-refresh: re-pull today's items from the backend.
+  const refresh = async () => {
+    try {
+      const data = await fetchToday();
+      saveItems(data.items);
+      setItems(data.items);
+    } catch {
+      /* keep current items on failure */
+    }
+  };
+
   const handleAction = (action: 'save' | 'dismiss' | 'memo', id: string) => {
     setUiState(prev => {
       const cur = prev[id] ?? { saved: false, memo: false, dismissed: false, summaryExpanded: false };
@@ -420,6 +435,8 @@ export const Today = () => {
       if (action === 'memo') next.memo = !cur.memo;
       return { ...prev, [id]: next };
     });
+    if (action === 'save') toast({ title: getState(id).saved ? 'Removed from saved' : 'Saved to Library' });
+    if (action === 'dismiss') toast({ title: 'Dismissed' });
 
     const updated = items.map(i => {
       if (i.id !== id) return i;
@@ -498,18 +515,21 @@ export const Today = () => {
   const timeSaved = skipCandidates.reduce((acc, i) => acc + (i.durationMinutes ?? 20), 0);
 
   const dateStr = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
+  const hour = new Date().getHours();
+  const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
 
   return (
     <div className="min-h-full bg-background pb-2" data-testid="today-page">
+      <PullToRefresh onRefresh={refresh}>
       <div className="max-w-2xl mx-auto px-4 pt-4 space-y-5">
 
         {/* ── date header ── */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-xl font-bold tracking-tight text-foreground">Today's Briefing</h1>
+            <h1 className="text-2xl font-black tracking-tight text-foreground">{greeting}, Ömür</h1>
             <p className="text-xs text-muted-foreground flex items-center gap-1.5 mt-0.5">
               <Activity className="w-3.5 h-3.5 text-primary" />
-              {dateStr}
+              {dateStr} · Today's briefing
             </p>
           </div>
           <button
@@ -608,14 +628,19 @@ export const Today = () => {
                   {mustConsume.map(item => (
                     <AnimatePresence key={item.id}>
                       {!getState(item.id).dismissed && (
-                        <MustConsumeCard
-                          item={item}
-                          source={getSource(item.sourceId)}
-                          compact={compact}
-                          state={getState(item.id)}
-                          onAction={handleAction}
-                          onToggleSummary={handleToggleSummary}
-                        />
+                        <Swipeable
+                          onSwipeRight={() => handleAction('save', item.id)}
+                          onSwipeLeft={() => handleAction('dismiss', item.id)}
+                        >
+                          <MustConsumeCard
+                            item={item}
+                            source={getSource(item.sourceId)}
+                            compact={compact}
+                            state={getState(item.id)}
+                            onAction={handleAction}
+                            onToggleSummary={handleToggleSummary}
+                          />
+                        </Swipeable>
                       )}
                     </AnimatePresence>
                   ))}
@@ -842,6 +867,7 @@ export const Today = () => {
         )}
 
       </div>
+      </PullToRefresh>
     </div>
   );
 };

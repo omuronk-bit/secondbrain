@@ -4,6 +4,7 @@ import { Item, RecommendedAction } from '../../types';
 import { RecommendationBadge, actionLabel } from './RecommendationBadge';
 import { setItemAction, openItemLink } from '../../lib/api';
 import { updateItemAction } from '../../utils/storage';
+import { toast } from '../../hooks/use-toast';
 import { cn } from '../../lib/utils';
 
 const ACTIONS: RecommendedAction[] = ['deep_consume', 'skim', 'segment', 'skip'];
@@ -25,6 +26,7 @@ export function ActionControl({ item, className }: { item: Item; className?: str
     try {
       await setItemAction(item.id, next);
       updateItemAction(item.id, next);
+      toast({ title: `Flagged: ${actionLabel(next, item.contentType)}` });
     } catch {
       setAction(prev); // revert on failure
     } finally {

@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { SUGGESTED_QUESTIONS, SearchScope, AskResult } from '../utils/mockAI';
 import { getItems, getAskHistory, saveAskHistory } from '../utils/storage';
-import { askApi } from '../lib/api';
+import { streamAsk } from '../lib/api';
+import { Markdown } from '../components/shared/Markdown';
 import {
   Search, Send, Clock, Sparkles, ChevronDown, ChevronUp,
   Bookmark, Newspaper, HelpCircle, ThumbsUp, ThumbsDown,
@@ -238,17 +239,15 @@ export const Ask = () => {
     setHistory(newHistory);
     saveAskHistory(newHistory);
 
-    // Real retrieval + synthesis over the vault (FastAPI /api/ask → Opus, cited).
-    askApi(trimmed)
-      .then(({ answer }) => {
-        setResult(toAskResult(answer, getItems().length));
-        setIsGenerating(false);
-      })
-      .catch((err: unknown) => {
-        const msg = err instanceof Error ? err.message : String(err);
-        setResult(toAskResult(`⚠️ Query failed — ${msg}`, 0, 'low'));
-        setIsGenerating(false);
-      });
+    // Real retrieval + synthesis over the vault, streamed token-by-token.
+    streamAsk(trimmed, (full) => {
+      setResult(toAskResult(full, getItems().length));
+      setIsGenerating(false);
+    }).catch((err: unknown) => {
+      const msg = err instanceof Error ? err.message : String(err);
+      setResult(toAskResult(`⚠️ Query failed — ${msg}`, 0, 'low'));
+      setIsGenerating(false);
+    });
   };
 
   const runSuggestedQuery = (q: string) => {
@@ -393,7 +392,7 @@ export const Ask = () => {
 
                 {/* Direct answer */}
                 <div className="px-4 py-4">
-                  <p className="text-sm leading-relaxed text-foreground whitespace-pre-wrap">{result.directAnswer}</p>
+                  <Markdown content={result.directAnswer} />
                   <p className="mt-2 text-[11px] text-muted-foreground/60 italic">{result.confidenceReason}</p>
                 </div>
 

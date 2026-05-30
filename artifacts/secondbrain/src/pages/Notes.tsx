@@ -6,6 +6,10 @@ import {
   listNotes, getNote, createNote, saveNote, deleteNote, NoteListItem,
 } from '../lib/api';
 import { Markdown, toggleCheckbox } from '../components/shared/Markdown';
+import { NoteSkeletons } from '../components/shared/Skeleton';
+import { PullToRefresh } from '../components/shared/PullToRefresh';
+import { toast } from '../hooks/use-toast';
+import { motion } from 'framer-motion';
 import { cn } from '../lib/utils';
 
 const DOMAINS: [string, string][] = [
@@ -88,8 +92,10 @@ export const Notes = () => {
       if (editor.id === null) {
         const r = await createNote(editor.title || 'Untitled', editor.body, editor.domain);
         setEditor({ ...editor, id: r.id });
+        toast({ title: 'Note created' });
       } else {
         await saveNote(editor.id, editor.body, editor.title);
+        toast({ title: 'Note saved' });
       }
       setDirty(false);
       setSavedFlash(true);
@@ -125,6 +131,7 @@ export const Notes = () => {
     }
     if (!confirm('Delete this note?')) return;
     await deleteNote(editor.id);
+    toast({ title: 'Note deleted' });
     setEditor(null);
   }
 
@@ -217,59 +224,66 @@ export const Notes = () => {
         </div>
       </div>
 
-      <div className="flex-1 px-4 py-4 max-w-2xl mx-auto w-full space-y-3">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/50" />
-          <input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search your notes…"
-            className="w-full bg-card border-2 border-border/60 focus:border-primary/40 rounded-xl pl-9 pr-3 py-2.5 text-sm outline-none transition-colors"
-          />
-        </div>
+      <div className="flex-1 px-4 py-4 max-w-2xl mx-auto w-full">
+        <PullToRefresh onRefresh={load}>
+          <div className="space-y-3">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/50" />
+              <input
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Search your notes…"
+                className="w-full bg-card border-2 border-border/60 focus:border-primary/40 rounded-xl pl-9 pr-3 py-2.5 text-sm outline-none transition-colors"
+              />
+            </div>
 
-        <div className="flex overflow-x-auto gap-1.5 pb-1 no-scrollbar">
-          {[['', 'All'], ...DOMAINS].map(([k, label]) => (
-            <button
-              key={k}
-              onClick={() => setFilter(k)}
-              className={cn(
-                'whitespace-nowrap px-3 py-1.5 rounded-lg text-xs font-semibold border shrink-0 transition-all',
-                filter === k ? 'bg-primary text-primary-foreground border-primary' : 'bg-muted/40 text-muted-foreground border-border/50 hover:bg-muted',
-              )}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
+            <div className="flex overflow-x-auto gap-1.5 pb-1 no-scrollbar">
+              {[['', 'All'], ...DOMAINS].map(([k, label]) => (
+                <button
+                  key={k}
+                  onClick={() => setFilter(k)}
+                  className={cn(
+                    'whitespace-nowrap px-3 py-1.5 rounded-lg text-xs font-semibold border shrink-0 transition-all',
+                    filter === k ? 'bg-primary text-primary-foreground border-primary' : 'bg-muted/40 text-muted-foreground border-border/50 hover:bg-muted',
+                  )}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
 
-        {loading || busyOpen ? (
-          <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>
-        ) : notes.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16 text-center gap-2">
-            <div className="w-12 h-12 rounded-full bg-secondary flex items-center justify-center"><FileText className="w-5 h-5 text-muted-foreground" /></div>
-            <p className="text-sm font-semibold text-foreground">{query ? 'No notes match' : 'No notes yet'}</p>
-            <p className="text-xs text-muted-foreground">Tap “New” to write your first note.</p>
+            {loading || busyOpen ? (
+              <NoteSkeletons />
+            ) : notes.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-16 text-center gap-2">
+                <div className="w-12 h-12 rounded-full bg-secondary flex items-center justify-center"><FileText className="w-5 h-5 text-muted-foreground" /></div>
+                <p className="text-sm font-semibold text-foreground">{query ? 'No notes match' : 'No notes yet'}</p>
+                <p className="text-xs text-muted-foreground">Tap “New” to write your first note.</p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {notes.map((n, i) => (
+                  <motion.button
+                    key={n.id}
+                    initial={{ opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.22, delay: Math.min(i * 0.03, 0.3) }}
+                    onClick={() => openNote(n)}
+                    className="w-full text-left bg-card border border-border/60 rounded-xl p-3.5 hover:border-border transition-colors space-y-1"
+                    data-testid={`note-${n.id}`}
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <h3 className="font-bold text-sm text-foreground leading-snug line-clamp-1">{n.title}</h3>
+                      <span className="shrink-0 text-[10px] font-semibold px-1.5 py-0.5 rounded bg-secondary text-muted-foreground">{domainLabel(n.domain)}</span>
+                    </div>
+                    {n.snippet && <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2">{n.snippet}</p>}
+                    {n.date && <p className="text-[10px] text-muted-foreground/60">{n.date}</p>}
+                  </motion.button>
+                ))}
+              </div>
+            )}
           </div>
-        ) : (
-          <div className="space-y-2">
-            {notes.map((n) => (
-              <button
-                key={n.id}
-                onClick={() => openNote(n)}
-                className="w-full text-left bg-card border border-border/60 rounded-xl p-3.5 hover:border-border transition-colors space-y-1"
-                data-testid={`note-${n.id}`}
-              >
-                <div className="flex items-center justify-between gap-2">
-                  <h3 className="font-bold text-sm text-foreground leading-snug line-clamp-1">{n.title}</h3>
-                  <span className="shrink-0 text-[10px] font-semibold px-1.5 py-0.5 rounded bg-secondary text-muted-foreground">{domainLabel(n.domain)}</span>
-                </div>
-                {n.snippet && <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2">{n.snippet}</p>}
-                {n.date && <p className="text-[10px] text-muted-foreground/60">{n.date}</p>}
-              </button>
-            ))}
-          </div>
-        )}
+        </PullToRefresh>
       </div>
     </div>
   );

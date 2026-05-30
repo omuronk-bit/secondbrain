@@ -28,6 +28,21 @@ export const ItemCardSkeleton = () => (
   </div>
 );
 
+export const NoteSkeletons = ({ count = 6 }: { count?: number }) => (
+  <div className="space-y-2">
+    {Array.from({ length: count }).map((_, i) => (
+      <div key={i} className="bg-card border border-border/60 rounded-xl p-3.5 space-y-2">
+        <div className="flex items-center justify-between gap-2">
+          <Skeleton className="h-3.5 w-1/2" />
+          <Skeleton className="h-4 w-16 rounded" />
+        </div>
+        <Skeleton className="h-3 w-full" />
+        <Skeleton className="h-3 w-4/5" />
+      </div>
+    ))}
+  </div>
+);
+
 export const SourceCardSkeleton = () => (
   <div className="bg-card border rounded-xl p-4 space-y-3">
     <div className="flex items-center justify-between">
