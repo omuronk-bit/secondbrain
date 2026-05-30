@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
-import { generateMockAIAnswer, SUGGESTED_QUESTIONS, SearchScope, AskResult } from '../utils/mockAI';
+import { SUGGESTED_QUESTIONS, SearchScope, AskResult } from '../utils/mockAI';
 import { getItems, getAskHistory, saveAskHistory } from '../utils/storage';
-import { segments } from '../data/mockData';
+import { askApi } from '../lib/api';
 import {
   Search, Send, Clock, Sparkles, ChevronDown, ChevronUp,
   Bookmark, Newspaper, HelpCircle, ThumbsUp, ThumbsDown,
@@ -10,6 +10,28 @@ import {
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
+
+// Map the backend's plain answer string into the AskResult shape the UI renders.
+// The synthesized answer cites its own sources inline ([Source N]); the structured
+// supporting-evidence / segment cards stay empty until the API returns them.
+function toAskResult(
+  answer: string,
+  scanned: number,
+  confidence: 'high' | 'medium' | 'low' = 'high',
+): AskResult {
+  return {
+    directAnswer: answer,
+    confidenceReason: 'Synthesized from your vault with citation discipline.',
+    confidence,
+    totalScanned: scanned,
+    supportingItems: [],
+    relatedSegments: [],
+    uncertainties: [],
+    suggestedNextAction: 'Ask a follow-up, or open the cited sources in your vault.',
+    topItem: null,
+    scopeLabel: 'Vault',
+  };
+}
 
 // ─── Scope configuration ─────────────────────────────────────────────────────
 
@@ -216,12 +238,17 @@ export const Ask = () => {
     setHistory(newHistory);
     saveAskHistory(newHistory);
 
-    // Simulate retrieval + synthesis latency
-    setTimeout(() => {
-      const ans = generateMockAIAnswer(trimmed, scope, getItems(), segments);
-      setResult(ans);
-      setIsGenerating(false);
-    }, 1400);
+    // Real retrieval + synthesis over the vault (FastAPI /api/ask → Opus, cited).
+    askApi(trimmed)
+      .then(({ answer }) => {
+        setResult(toAskResult(answer, getItems().length));
+        setIsGenerating(false);
+      })
+      .catch((err: unknown) => {
+        const msg = err instanceof Error ? err.message : String(err);
+        setResult(toAskResult(`⚠️ Query failed — ${msg}`, 0, 'low'));
+        setIsGenerating(false);
+      });
   };
 
   const runSuggestedQuery = (q: string) => {
@@ -366,7 +393,7 @@ export const Ask = () => {
 
                 {/* Direct answer */}
                 <div className="px-4 py-4">
-                  <p className="text-sm leading-relaxed text-foreground">{result.directAnswer}</p>
+                  <p className="text-sm leading-relaxed text-foreground whitespace-pre-wrap">{result.directAnswer}</p>
                   <p className="mt-2 text-[11px] text-muted-foreground/60 italic">{result.confidenceReason}</p>
                 </div>
 

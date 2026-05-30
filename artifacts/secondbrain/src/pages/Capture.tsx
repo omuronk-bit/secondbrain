@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { getCaptures, saveCaptures, getSources, saveSources } from '../utils/storage';
+import { captureApi } from '../lib/api';
 import {
   CapturedItem, CaptureCategory, Priority, VoiceExtraction, Source
 } from '../types';
@@ -512,6 +513,7 @@ export const Capture = () => {
       category: 'work',
       priority: 'medium',
     });
+    captureApi(voiceTranscript, 'note').catch((e) => console.error('vault capture failed', e));
     setVoiceTranscript('');
     setVoiceResult(null);
     setVoiceSuccess(true);
@@ -530,6 +532,9 @@ export const Capture = () => {
       priority: textPriority,
       category: textCategory,
     });
+    // Persist to the real vault (Haiku classifies domain/title, then write_note).
+    const body = data.project ? `${data.content}\n\nProject: ${data.project}` : data.content;
+    captureApi(body, 'note').catch((e) => console.error('vault capture failed', e));
     textForm.reset();
     setTextSuccess(true);
     setTimeout(() => setTextSuccess(false), 2000);

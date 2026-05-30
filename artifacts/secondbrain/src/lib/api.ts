@@ -1,0 +1,78 @@
+// Minimal client for the SecondBrain backend (FastAPI). The app is served
+// same-origin behind the Cloudflare tunnel, so the default base is `/api`.
+// The bearer token is entered once via the ConnectGate and kept in localStorage
+// (never baked into the bundle).
+import { Item } from '../types';
+
+const BASE_KEY = 'sb_api_base';
+const TOKEN_KEY = 'sb_api_token';
+
+const DEFAULT_BASE =
+  (import.meta.env.VITE_SB_API_BASE as string | undefined)?.replace(/\/$/, '') || '/api';
+
+export const getApiBase = (): string =>
+  (localStorage.getItem(BASE_KEY) || DEFAULT_BASE).replace(/\/$/, '');
+
+export const getToken = (): string => localStorage.getItem(TOKEN_KEY) || '';
+
+export const isConfigured = (): boolean => !!getToken();
+
+export const setConfig = (base: string, token: string): void => {
+  localStorage.setItem(BASE_KEY, (base || DEFAULT_BASE).replace(/\/$/, ''));
+  localStorage.setItem(TOKEN_KEY, token.trim());
+};
+
+export const clearConfig = (): void => {
+  localStorage.removeItem(TOKEN_KEY);
+};
+
+async function apiFetch(path: string, init: RequestInit = {}): Promise<Response> {
+  const res = await fetch(`${getApiBase()}${path}`, {
+    ...init,
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${getToken()}`,
+      ...(init.headers || {}),
+    },
+  });
+  if (!res.ok) {
+    const body = await res.text().catch(() => '');
+    throw new Error(`API ${res.status}: ${body.slice(0, 200) || res.statusText}`);
+  }
+  return res;
+}
+
+export interface TodayStats {
+  reviewed: number;
+  mustRead: number;
+  segments: number;
+  timeSavedMin: number;
+  memo: number;
+}
+export interface TodayResponse {
+  items: Item[];
+  stats: TodayStats;
+}
+
+export const fetchToday = (): Promise<TodayResponse> =>
+  apiFetch('/today').then((r) => r.json());
+
+export const askApi = (question: string): Promise<{ answer: string }> =>
+  apiFetch('/ask', { method: 'POST', body: JSON.stringify({ question }) }).then((r) => r.json());
+
+export const captureApi = (
+  text: string,
+  type = 'note',
+): Promise<{ ok: boolean; path: string }> =>
+  apiFetch('/capture', { method: 'POST', body: JSON.stringify({ text, type }) }).then((r) =>
+    r.json(),
+  );
+
+/** Validate base+token before saving — used by the connect screen. */
+export async function checkConnection(base: string, token: string): Promise<void> {
+  const res = await fetch(`${(base || DEFAULT_BASE).replace(/\/$/, '')}/today`, {
+    headers: { Authorization: `Bearer ${token.trim()}` },
+  });
+  if (res.status === 401) throw new Error('Invalid token (401 Unauthorized).');
+  if (!res.ok) throw new Error(`Server returned ${res.status}.`);
+}
