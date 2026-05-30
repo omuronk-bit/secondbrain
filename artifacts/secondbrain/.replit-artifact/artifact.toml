@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "Secondbrain"
+version = "1.0.0"
+id = "artifacts/secondbrain"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 19592
+
+[services.development]
+run = "pnpm --filter @workspace/secondbrain run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/secondbrain", "run", "build" ]
+publicDir = "artifacts/secondbrain/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "19592"
+BASE_PATH = "/"

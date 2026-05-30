@@ -1,0 +1,266 @@
+Build a mobile-first web app prototype called “Secondbrain”.
+
+This is not a generic notes app. It is a personal intelligence cockpit for a knowledge loop that ingests articles, podcasts, YouTube videos, newsletters, documents, and personal notes; then recommends what to skip, skim, consume by segment, or deep-consume.
+
+The app should be a Phase 1 prototype with mock data and local state. Do not build a production backend yet. Do not require real API keys. Use clean architecture so the app can later connect to Supabase/Postgres, pgvector, transcription APIs, and AI ranking workflows.
+
+Tech requirements:
+- Use React + TypeScript.
+- Use Vite if appropriate.
+- Use Tailwind CSS or clean CSS modules.
+- Mobile-first responsive design.
+- Desktop should also look good, but the main target is iPhone-sized mobile usage.
+- Use localStorage for persistence where useful.
+- Use mock data in structured files.
+- Create reusable components.
+- Keep code organized and readable.
+- No unnecessary dependencies.
+- No authentication for Phase 1.
+- No real AI API calls.
+- Simulate AI outputs using mock functions and mock data.
+
+Core product concept:
+Secondbrain helps the user answer:
+1. What deserves my attention today?
+2. What should I skip?
+3. What exact podcast/video/article segment should I consume?
+4. Why is this recommended?
+5. What should be saved into weekly synthesis?
+6. What feedback can I give so the system improves?
+
+Navigation:
+Create a bottom mobile navigation with these five tabs:
+1. Today
+2. Capture
+3. Media
+4. Ask
+5. Library
+
+Global UX:
+- Clean executive-grade design.
+- Dense enough for a serious user, but not cluttered.
+- Cards with clear hierarchy.
+- Use badges for recommendation type: Skip, Skim, Segment, Deep Consume.
+- Show relevance score, novelty score, and confidence where appropriate.
+- Include empty states, loading-like states, and error-like placeholder states where useful.
+- Add dark mode toggle if simple.
+- App should feel like a serious personal intelligence product, not a generic productivity app.
+
+Data model:
+Create TypeScript types and mock data for:
+
+Source:
+- id
+- name
+- type: podcast | youtube | article | newsletter | document | manual | rss
+- url
+- priority: high | medium | low
+- trustLevel: high | medium | low
+- active: boolean
+- topics: string[]
+- lastCheckedAt
+
+Item:
+- id
+- sourceId
+- title
+- creator
+- contentType: podcast | youtube | article | newsletter | document | note
+- originalUrl
+- publishedAt
+- ingestedAt
+- durationMinutes
+- status: new | reviewed | saved | dismissed
+- recommendedAction: skip | skim | segment | deep_consume
+- relevanceScore: number
+- noveltyScore: number
+- importanceScore: number
+- confidence: high | medium | low
+- summary
+- whyRecommended
+- topics: string[]
+
+Segment:
+- id
+- itemId
+- startTime
+- endTime
+- title
+- transcriptExcerpt
+- segmentSummary
+- whyRecommended
+- relevanceScore
+- recommendedAction
+
+Feedback:
+- id
+- targetType: item | segment | source | topic | synthesis
+- targetId
+- feedbackType: useful | not_useful | too_basic | already_known | more_like_this | less_like_this | wrong_reason | important_for_work | personal_curiosity
+- comment
+- createdAt
+
+Synthesis:
+- id
+- period: daily | weekly | monthly
+- title
+- date
+- keyInsights: string[]
+- mustConsumeItemIds: string[]
+- savedItemIds: string[]
+- openQuestions: string[]
+- actions: string[]
+
+Today tab:
+Create a ranked Today feed with sections:
+1. Must consume
+2. Recommended segments
+3. Skim candidates
+4. Safe to skip
+5. Weekly memo candidates
+6. Open loops
+
+Each card should show:
+- title
+- source
+- content type
+- recommendation badge
+- one-sentence summary
+- why recommended
+- relevance score
+- novelty score
+- confidence
+- actions: Save, Dismiss, More like this, Less like this, Add to weekly memo, Ask about this
+
+Cards should update visually when saved/dismissed/added to weekly memo. Persist basic state in localStorage.
+
+Capture tab:
+Create capture options:
+1. Share link
+2. Voice note
+3. Text note
+4. Upload file placeholder
+5. Add source
+6. Screenshot/image placeholder
+
+For Phase 1:
+- Link capture should accept URL, title, optional note, topics.
+- Text note should accept free text and topics.
+- Voice note should simulate recording/transcription using a text area and a “Simulate transcript” button.
+- Add source should allow source name, type, url, priority, topics.
+- Store captures locally and show them in a recent captures list.
+- Each captured item should have a simulated status: captured, processing, summarized, ready.
+
+Media tab:
+Create a media consumption cockpit:
+- Filters: All, Podcasts, YouTube, Articles, Saved Segments, Deep Consume, Skim.
+- Show media cards with title, source, duration, recommendation, recommended segment if available, and reason.
+- For items with segments, include a “View segments” button.
+- Segment detail should show:
+  - start/end time
+  - segment title
+  - transcript excerpt
+  - segment summary
+  - why recommended
+  - buttons: Play segment placeholder, Save segment, Dismiss, More like this, Less like this, Add to weekly memo
+- Include a simulated player bar when “Play segment” is clicked.
+
+Ask tab:
+Create a mock secondbrain search/ask interface:
+- Input box with placeholder questions:
+  - “What should I consume today about AI agents?”
+  - “What have I collected about telecom churn?”
+  - “Which media items are relevant to pricing strategy?”
+  - “What did I save for the weekly memo?”
+- Mode selector:
+  - Ask everything
+  - Ask only media
+  - Ask only my notes
+  - Ask last 7 days
+  - Ask work-related memory
+- On submit, generate a simulated answer based on mock data.
+- Answer should include:
+  - direct answer
+  - supporting items
+  - related segments
+  - confidence
+  - suggested next action
+- No real AI API calls. Use deterministic mock matching by topics/keywords.
+
+Library tab:
+Create structured views:
+1. Themes
+2. Sources
+3. Saved items
+4. Weekly memos
+5. Decisions / actions
+6. Feedback history
+
+Library should not look like a dump. It should be organized around decision usefulness.
+
+Must-have features:
+- Today feed
+- Capture flows
+- Media feed
+- Segment recommendations
+- Ask/search mock interface
+- Library
+- Feedback buttons
+- Save/dismiss/add to weekly memo
+- Source registry
+- Local persistence
+- Mobile-first navigation
+- Clear reusable components
+- Mock data that demonstrates the app’s purpose
+
+Nice-to-have features:
+- Dark mode
+- PWA-like polish
+- Export JSON button
+- Goal settings
+- Priority weights
+- Weekly synthesis preview
+- Recent activity timeline
+- Simple analytics dashboard
+- Keyboard shortcuts for desktop
+- Onboarding screen explaining the product
+- Notification settings mockup
+- Empty states
+- Error states
+- Loading skeletons
+
+Design direction:
+- Serious, executive, calm.
+- Avoid playful colors.
+- Use crisp typography.
+- Make the Today tab feel like a command center.
+- Use subtle cards, clear labels, and compact scoring.
+- Avoid looking like Twitter, Notion, or a generic chat app.
+- The product should feel like “Bloomberg terminal for personal knowledge”, simplified for mobile.
+
+File structure suggestion:
+- src/App.tsx
+- src/types.ts
+- src/data/mockData.ts
+- src/utils/recommendation.ts
+- src/utils/storage.ts
+- src/components/
+- src/components/navigation/
+- src/components/cards/
+- src/components/feedback/
+- src/components/media/
+- src/pages/Today.tsx
+- src/pages/Capture.tsx
+- src/pages/Media.tsx
+- src/pages/Ask.tsx
+- src/pages/Library.tsx
+
+Acceptance criteria:
+- App runs without errors.
+- All five tabs work.
+- Mock data appears.
+- Buttons have visible effects.
+- State persists after refresh where relevant.
+- Layout works on mobile and desktop.
+- No real API keys required.
+- Code is clean enough to later connect to a backend.
