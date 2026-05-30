@@ -330,7 +330,7 @@ const SkipCard = ({ item, source, onAction, state }: SkipCardProps) => (
       <p className="text-xs text-muted-foreground leading-snug">{item.whyRecommended}</p>
     </div>
     <div className="flex flex-col items-end gap-1.5 shrink-0">
-      <RecommendationBadge action={item.recommendedAction} />
+      <ActionControl item={item} />
       <button
         onClick={() => onAction('dismiss', item.id)}
         data-testid={`skip-dismiss-btn-${item.id}`}
@@ -771,7 +771,7 @@ export const Today = () => {
                         <p className="font-semibold text-sm text-foreground leading-snug">{item.title}</p>
                         <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{item.summary}</p>
                       </div>
-                      <RecommendationBadge action={item.recommendedAction} className="shrink-0" />
+                      <ActionControl item={item} />
                     </div>
                   ))
                 )}
