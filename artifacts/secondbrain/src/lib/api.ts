@@ -83,6 +83,29 @@ export const openItemLink = (item: Item): void => {
   if (item.originalUrl) window.open(item.originalUrl, '_blank', 'noopener,noreferrer');
 };
 
+export interface UploadResult {
+  ok: boolean;
+  path: string;
+  title?: string;
+  transcript?: string;
+}
+
+/** Upload a file (document or audio) — multipart, so Content-Type is left to the browser. */
+export async function uploadFile(file: Blob, filename?: string): Promise<UploadResult> {
+  const fd = new FormData();
+  fd.append('file', file, filename || (file as File).name || 'upload');
+  const res = await fetch(`${getApiBase()}/upload`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${getToken()}` },
+    body: fd,
+  });
+  if (!res.ok) {
+    const body = await res.text().catch(() => '');
+    throw new Error(`API ${res.status}: ${body.slice(0, 200) || res.statusText}`);
+  }
+  return res.json();
+}
+
 /** Validate base+token before saving — used by the connect screen. */
 export async function checkConnection(base: string, token: string): Promise<void> {
   const res = await fetch(`${(base || DEFAULT_BASE).replace(/\/$/, '')}/today`, {

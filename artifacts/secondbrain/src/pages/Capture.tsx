@@ -13,6 +13,8 @@ import {
 import { cn } from '../lib/utils';
 import { getCaptures, saveCaptures, getSources, saveSources } from '../utils/storage';
 import { captureApi } from '../lib/api';
+import { FileUpload } from '../components/capture/FileUpload';
+import { VoiceRecorder } from '../components/capture/VoiceRecorder';
 import {
   CapturedItem, CaptureCategory, Priority, VoiceExtraction, Source
 } from '../types';
@@ -47,32 +49,6 @@ function extractTopicsFromText(text: string): string[] {
     if (lower.includes(keyword)) found.add(topic);
   }
   return found.size > 0 ? [...found].slice(0, 4) : ['general'];
-}
-
-// TODO Phase 2: Replace simulateVoiceExtraction with a real transcription pipeline:
-//   1. Record audio blob → POST to /api/transcribe (Whisper / Deepgram)
-//   2. On success, POST transcript to /api/summarize (GPT-4o / Claude)
-//   3. Return VoiceExtraction with AI-generated title, summary, topics, action
-// TODO Phase 2: Share-sheet capture (iOS/Android) → POST directly to /api/captures
-//   with source app metadata (Safari, Podcasts, Kindle) for richer ingestion context.
-function simulateVoiceExtraction(transcript: string): VoiceExtraction {
-  const sentences = transcript.split(/[.!?]/).map(s => s.trim()).filter(Boolean);
-  const title = sentences[0]?.slice(0, 60) ?? 'Voice note';
-  const summary = transcript.slice(0, 120) + (transcript.length > 120 ? '...' : '');
-  const topics = extractTopicsFromText(transcript);
-  const hasPricing = transcript.toLowerCase().includes('pric');
-  const hasAI = transcript.toLowerCase().includes('ai') || transcript.toLowerCase().includes('agent');
-  const possibleAction = hasPricing
-    ? 'Add to pricing strategy theme cluster'
-    : hasAI
-      ? 'Link to AI agents research thread'
-      : 'File under general notes for weekly review';
-  const suggestedCategory = topics.some(t => t.includes('pricing') || t.includes('enterprise') || t.includes('leadership'))
-    ? 'Work'
-    : topics.some(t => t.includes('AI') || t.includes('LLMs'))
-      ? 'Work / Research'
-      : 'Personal';
-  return { title, summary, topics, possibleAction, suggestedCategory };
 }
 
 // ─── field primitives ────────────────────────────────────────────────────────
@@ -375,13 +351,6 @@ export const Capture = () => {
   const [linkCategory, setLinkCategory] = useState<CaptureCategory>('work');
   const [linkSuccess, setLinkSuccess] = useState(false);
 
-  // Voice state
-  const [voiceTranscript, setVoiceTranscript] = useState('');
-  const [voiceProcessing, setVoiceProcessing] = useState(false);
-  const [voiceResult, setVoiceResult] = useState<VoiceExtraction | null>(null);
-  const [voiceRecording, setVoiceRecording] = useState(false);
-  const [voiceSuccess, setVoiceSuccess] = useState(false);
-
   // Text state
   const [textPriority, setTextPriority] = useState<Priority>('medium');
   const [textCategory, setTextCategory] = useState<CaptureCategory>('work');
@@ -393,10 +362,6 @@ export const Capture = () => {
   const [srcTrust, setSrcTrust] = useState<string>('medium');
   const [srcActive, setSrcActive] = useState(true);
   const [srcSuccess, setSrcSuccess] = useState(false);
-
-  // Drag state for file
-  const [isDragging, setIsDragging] = useState(false);
-  const dropRef = useRef<HTMLDivElement>(null);
 
   // Forms
   const linkForm = useForm<z.infer<typeof linkSchema>>({
@@ -479,45 +444,6 @@ export const Capture = () => {
     linkForm.reset();
     setLinkSuccess(true);
     setTimeout(() => setLinkSuccess(false), 2000);
-  };
-
-  // ── Voice process
-  const handleSimulateRecording = () => {
-    setVoiceRecording(true);
-    setVoiceTranscript('');
-    setVoiceResult(null);
-    setTimeout(() => {
-      setVoiceRecording(false);
-      setVoiceTranscript('I want to capture some thoughts on pricing strategy for enterprise SaaS. We should look at value-based pricing models and how AI agents could change the pricing dynamics in the next two years. Also relevant to telecom churn analysis we have been doing.');
-    }, 2000);
-  };
-
-  const handleProcessVoice = () => {
-    if (!voiceTranscript.trim()) return;
-    setVoiceProcessing(true);
-    setTimeout(() => {
-      const extraction = simulateVoiceExtraction(voiceTranscript);
-      setVoiceResult(extraction);
-      setVoiceProcessing(false);
-    }, 1800);
-  };
-
-  const handleSaveVoice = () => {
-    if (!voiceResult) return;
-    addCapture({
-      type: 'voice',
-      title: voiceResult.title,
-      content: voiceTranscript,
-      topics: voiceResult.topics,
-      voiceExtraction: voiceResult,
-      category: 'work',
-      priority: 'medium',
-    });
-    captureApi(voiceTranscript, 'note').catch((e) => console.error('vault capture failed', e));
-    setVoiceTranscript('');
-    setVoiceResult(null);
-    setVoiceSuccess(true);
-    setTimeout(() => setVoiceSuccess(false), 2000);
   };
 
   // ── Text submit
@@ -669,101 +595,7 @@ export const Capture = () => {
           <motion.div key="voice" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
             className="bg-card border rounded-2xl p-5 shadow-sm space-y-4">
             <h2 className="font-bold text-base text-foreground">Voice note</h2>
-
-            {/* mock record button */}
-            <div className="flex flex-col items-center gap-3 py-4">
-              <button
-                onClick={handleSimulateRecording}
-                disabled={voiceRecording}
-                data-testid="voice-record-btn"
-                className={cn(
-                  'w-20 h-20 rounded-full flex items-center justify-center transition-all active:scale-95 shadow-lg',
-                  voiceRecording
-                    ? 'bg-red-500 text-white animate-pulse'
-                    : 'bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-900/60',
-                )}
-              >
-                {voiceRecording ? <AudioWaveform className="w-8 h-8" /> : <Mic className="w-8 h-8" />}
-              </button>
-              <p className="text-xs text-muted-foreground font-medium">
-                {voiceRecording ? 'Recording... (simulated)' : 'Tap to record voice note'}
-              </p>
-            </div>
-
-            {/* transcript textarea */}
-            <Field label="Simulated transcript">
-              <textarea
-                value={voiceTranscript}
-                onChange={e => { setVoiceTranscript(e.target.value); setVoiceResult(null); }}
-                rows={4}
-                placeholder="Recording will populate this automatically, or type your transcript here..."
-                className={textareaCls}
-                data-testid="voice-transcript-input"
-              />
-            </Field>
-
-            {!voiceResult && (
-              <button
-                onClick={handleProcessVoice}
-                disabled={voiceProcessing || !voiceTranscript.trim()}
-                className={submitBtnCls}
-                data-testid="voice-process-btn"
-              >
-                {voiceProcessing
-                  ? <><Loader2 className="w-4 h-4 animate-spin" />Processing transcript...</>
-                  : <><Sparkles className="w-4 h-4" />Process voice note</>}
-              </button>
-            )}
-
-            {/* voice extraction result */}
-            <AnimatePresence>
-              {voiceResult && (
-                <motion.div
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="rounded-xl border border-purple-200 dark:border-purple-900/40 bg-purple-50 dark:bg-purple-950/20 p-4 space-y-3"
-                >
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-purple-700 dark:text-purple-400">Extracted from transcript</p>
-
-                  <div className="space-y-2.5">
-                    <div>
-                      <p className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wide mb-0.5">Title</p>
-                      <p className="text-sm font-bold text-foreground">{voiceResult.title}</p>
-                    </div>
-                    <div>
-                      <p className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wide mb-0.5">Summary</p>
-                      <p className="text-sm text-foreground">{voiceResult.summary}</p>
-                    </div>
-                    <div>
-                      <p className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wide mb-0.5">Topics</p>
-                      <div className="flex flex-wrap gap-1.5">
-                        {voiceResult.topics.map(t => (
-                          <span key={t} className="text-[11px] px-2 py-0.5 rounded-full bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300 font-medium">{t}</span>
-                        ))}
-                      </div>
-                    </div>
-                    <div>
-                      <p className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wide mb-0.5">Possible action</p>
-                      <p className="text-sm text-foreground">{voiceResult.possibleAction}</p>
-                    </div>
-                    <div>
-                      <p className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wide mb-0.5">Suggested category</p>
-                      <p className="text-sm font-semibold text-foreground">{voiceResult.suggestedCategory}</p>
-                    </div>
-                  </div>
-
-                  <button
-                    onClick={handleSaveVoice}
-                    className={submitBtnCls}
-                    data-testid="voice-save-btn"
-                  >
-                    {voiceSuccess
-                      ? <><CheckCircle2 className="w-4 h-4" />Saved to Secondbrain!</>
-                      : <><CheckCircle2 className="w-4 h-4" />Save to Secondbrain</>}
-                  </button>
-                </motion.div>
-              )}
-            </AnimatePresence>
+            <VoiceRecorder onSaved={(title) => addCapture({ type: 'voice', title, topics: [] })} />
           </motion.div>
         )}
 
@@ -823,37 +655,10 @@ export const Capture = () => {
           </motion.div>
         )}
 
-        {/* ══ FILE UPLOAD PLACEHOLDER ══ */}
+        {/* ══ FILE UPLOAD ══ */}
         {mode === 'file' && (
           <motion.div key="file" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}>
-            <div
-              ref={dropRef}
-              onDragOver={e => { e.preventDefault(); setIsDragging(true); }}
-              onDragLeave={() => setIsDragging(false)}
-              onDrop={e => { e.preventDefault(); setIsDragging(false); }}
-              className={cn(
-                'rounded-2xl border-2 border-dashed transition-colors p-10 text-center space-y-4',
-                isDragging
-                  ? 'border-primary bg-primary/5'
-                  : 'border-border bg-card',
-              )}
-              data-testid="file-dropzone"
-            >
-              <div className="w-16 h-16 rounded-2xl bg-secondary flex items-center justify-center mx-auto">
-                <Upload className="w-8 h-8 text-muted-foreground" />
-              </div>
-              <div className="space-y-1">
-                <p className="font-bold text-foreground">Drag and drop your file here</p>
-                <p className="text-sm text-muted-foreground">or tap to browse</p>
-              </div>
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/40">
-                <AlertCircle className="w-4 h-4 text-amber-600 dark:text-amber-400" />
-                <p className="text-xs font-semibold text-amber-700 dark:text-amber-300">Phase 2 feature</p>
-              </div>
-              <p className="text-sm text-muted-foreground max-w-xs mx-auto leading-relaxed">
-                PDFs, screenshots, transcripts, and documents will be processed here. Full OCR and AI summarization coming in Phase 2.
-              </p>
-            </div>
+            <FileUpload onSaved={(title) => addCapture({ type: 'text', title, topics: [] })} />
           </motion.div>
         )}
 
