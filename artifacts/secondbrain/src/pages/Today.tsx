@@ -14,6 +14,7 @@ import { EmptyState } from '../components/shared/EmptyState';
 import { ContentIcon } from '../components/shared/ContentIcon';
 import { getItems, saveItems } from '../utils/storage';
 import { fetchToday } from '../lib/api';
+import { BriefCard } from '../components/shared/BriefCard';
 import { PullToRefresh } from '../components/shared/PullToRefresh';
 import { Swipeable } from '../components/shared/Swipeable';
 import { toast } from '../hooks/use-toast';
@@ -599,6 +600,9 @@ export const Today = () => {
             ))}
           </div>
         </div>
+
+        {/* ── your brief ── */}
+        <BriefCard />
 
         {/* ── summary strip ── */}
         <div className="grid grid-cols-5 gap-0 rounded-xl border bg-card shadow-sm overflow-hidden" data-testid="summary-strip">

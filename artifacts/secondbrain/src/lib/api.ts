@@ -71,6 +71,13 @@ export const fetchSegments = (): Promise<{ segments: Segment[] }> =>
 export const fetchSources = (): Promise<{ sources: Source[] }> =>
   apiFetch('/sources').then((r) => r.json());
 
+export interface Brief {
+  date: string;
+  body: string;
+}
+export const fetchBrief = (): Promise<{ daily: Brief | null; weekly: Brief | null }> =>
+  apiFetch('/brief').then((r) => r.json());
+
 export const askApi = (question: string): Promise<{ answer: string }> =>
   apiFetch('/ask', { method: 'POST', body: JSON.stringify({ question }) }).then((r) => r.json());
 
