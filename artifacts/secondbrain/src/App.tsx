@@ -57,7 +57,7 @@ export default function App() {
     <div className="min-h-[100dvh] flex flex-col bg-background text-foreground transition-colors duration-200">
       <WouterRouter base={import.meta.env.BASE_URL?.replace(/\/$/, "") || ""}>
         <TopBar theme={theme} toggleTheme={toggleTheme} />
-        <main className="flex-1 pt-[calc(3.5rem+env(safe-area-inset-top))] pb-[calc(60px+env(safe-area-inset-bottom))] md:pb-0 overflow-x-hidden">
+        <main className="flex-1 pt-[calc(3.5rem+env(safe-area-inset-top))] pb-[calc(60px+env(safe-area-inset-bottom))] md:pb-0 overflow-x-clip">
           <Pages />
         </main>
         <AskFab />

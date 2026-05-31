@@ -230,9 +230,9 @@ const DetailPanel = ({
       animate={{ x: 0 }}
       exit={{ x: '100%' }}
       transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-      className="absolute inset-0 bg-background overflow-y-auto z-20"
+      className="fixed inset-0 bg-background overflow-y-auto z-[60]"
     >
-      <div className="max-w-2xl mx-auto px-4 pt-3 pb-8 space-y-5">
+      <div className="max-w-2xl mx-auto px-4 pt-[calc(0.75rem+env(safe-area-inset-top))] pb-[calc(2rem+env(safe-area-inset-bottom))] space-y-5">
         {/* back + actions */}
         <div className="flex items-center justify-between">
           <button
@@ -536,7 +536,7 @@ export const Media = () => {
   const activeSort = SORTS.find(s => s.key === sort)!;
 
   return (
-    <div className="relative h-full flex flex-col overflow-hidden bg-background" data-testid="media-page">
+    <div className="relative min-h-full flex flex-col bg-background" data-testid="media-page">
 
       {/* ── filter + sort bar ── */}
       <div className="sticky top-[calc(3.5rem+env(safe-area-inset-top))] z-30 bg-background/90 backdrop-blur-md border-b border-border">
@@ -606,7 +606,7 @@ export const Media = () => {
       </div>
 
       {/* ── queue list ── */}
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1">
         <div className="max-w-2xl mx-auto px-4 py-4 space-y-3">
           {displayItems.length === 0 ? (
             <EmptyState
