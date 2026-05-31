@@ -93,6 +93,42 @@ export const closeCarryover = (id: string, status: 'done' | 'dropped'): Promise<
     body: JSON.stringify({ status }),
   }).then((r) => r.json());
 
+// Weekly recall quiz — active recall from your own vault claims.
+export interface RecallItem {
+  id: number;
+  question: string;
+  answered: boolean;
+  answer: string | null;
+  score: number | null;
+  feedback: string | null;
+  idealAnswer: string | null;
+  sourceClaim: string | null;
+  sourceTitle: string | null;
+}
+export interface RecallResponse {
+  week: string;
+  items: RecallItem[];
+  stats: { answered: number; total: number; avgScore: number | null };
+}
+export interface RecallGrade {
+  score: number;
+  feedback: string;
+  idealAnswer: string;
+  sourceTitle: string;
+  sourceClaim: string;
+}
+export const fetchRecall = (): Promise<RecallResponse> =>
+  apiFetch('/recall').then((r) => r.json());
+
+export const generateRecall = (): Promise<RecallResponse> =>
+  apiFetch('/recall/generate', { method: 'POST' }).then((r) => r.json());
+
+export const submitRecallAnswer = (id: number, answer: string): Promise<RecallGrade> =>
+  apiFetch(`/recall/${id}/answer`, {
+    method: 'POST',
+    body: JSON.stringify({ answer }),
+  }).then((r) => r.json());
+
 export interface Brief {
   date: string;
   body: string;
