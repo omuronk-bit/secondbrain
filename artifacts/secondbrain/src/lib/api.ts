@@ -164,6 +164,20 @@ export const fetchGrow = (): Promise<GrowResponse> =>
 export const generateGrow = (): Promise<GrowResponse> =>
   apiFetch('/grow/generate', { method: 'POST' }).then((r) => r.json());
 
+// Self-improvement loop: approve/reject the daily tuner's source/interest suggestions.
+export interface TuningCandidate {
+  tid: number;
+  type: string;
+  label: string;
+  detail: string;
+  rationale: string;
+  url: string | null;
+}
+export const fetchTuning = (): Promise<{ batch: string | null; candidates: TuningCandidate[] }> =>
+  apiFetch('/tuning').then((r) => r.json());
+export const applyTuning = (approve: number[], reject: number[]): Promise<{ ok: boolean; pushed: boolean }> =>
+  apiFetch('/tuning/apply', { method: 'POST', body: JSON.stringify({ approve, reject }) }).then((r) => r.json());
+
 export interface Brief {
   date: string;
   body: string;

@@ -19,6 +19,7 @@ import { CarryOvers } from '../components/shared/CarryOvers';
 import { RecallCard } from '../components/shared/RecallCard';
 import { GrowCard } from '../components/shared/GrowCard';
 import { FeedbackButtons } from '../components/shared/FeedbackButtons';
+import { TuningCard } from '../components/shared/TuningCard';
 import { PullToRefresh } from '../components/shared/PullToRefresh';
 import { Swipeable } from '../components/shared/Swipeable';
 import { toast } from '../hooks/use-toast';
@@ -641,6 +642,9 @@ export const Today = () => {
 
         {/* ── grow: foundational reading + blind spots ── */}
         <GrowCard />
+
+        {/* ── tune your feed (self-improvement; self-hides when empty) ── */}
+        <TuningCard />
 
         {/* ── filter tabs ── */}
         <div className="flex gap-1.5" data-testid="filter-tabs">
