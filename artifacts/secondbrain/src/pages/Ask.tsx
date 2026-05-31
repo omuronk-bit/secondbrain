@@ -1,9 +1,11 @@
 import { useState, useEffect, useRef } from 'react';
 import { Sparkles, ArrowUp, Loader2, Plus, Clock, Mic, Square, Volume2, VolumeX } from 'lucide-react';
-import { streamChat, transcribeAudio, Msg } from '../lib/api';
+import { streamChat, transcribeAudio, retrieveSources, Msg, SourceHit } from '../lib/api';
 import { getAskHistory, saveAskHistory } from '../utils/storage';
 import { Markdown } from '../components/shared/Markdown';
 import { cn } from '../lib/utils';
+
+type UiMsg = Msg & { sources?: SourceHit[] };
 
 const SUGGESTIONS = [
   "What's my latest churn & net adds?",
@@ -13,7 +15,7 @@ const SUGGESTIONS = [
 ];
 
 export const Ask = () => {
-  const [messages, setMessages] = useState<Msg[]>([]);
+  const [messages, setMessages] = useState<UiMsg[]>([]);
   const [input, setInput] = useState('');
   const [busy, setBusy] = useState(false);
   const [history, setHistory] = useState<string[]>(getAskHistory());
@@ -38,10 +40,22 @@ export const Ask = () => {
     streamChat(convo, (full) => {
       setMessages((m) => {
         const c = [...m];
-        c[c.length - 1] = { role: 'assistant', content: full };
+        c[c.length - 1] = { ...c[c.length - 1], role: 'assistant', content: full };
         return c;
       });
     })
+      .then(() =>
+        retrieveSources(q)
+          .then(({ sources }) => {
+            setMessages((m) => {
+              const c = [...m];
+              const last = c[c.length - 1];
+              if (last?.role === 'assistant') c[c.length - 1] = { ...last, sources };
+              return c;
+            });
+          })
+          .catch(() => { /* sources are best-effort */ }),
+      )
       .catch((e) => {
         const msg = e instanceof Error ? e.message : String(e);
         setMessages((m) => {
@@ -196,6 +210,16 @@ export const Ask = () => {
                           >
                             {speakingIdx === i ? <VolumeX className="w-3.5 h-3.5" /> : <Volume2 className="w-3.5 h-3.5" />}
                           </button>
+                          {m.sources && m.sources.length > 0 && (
+                            <div className="mt-2 pt-2 border-t border-border/40 space-y-1">
+                              <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground">Sources</p>
+                              {m.sources.slice(0, 5).map((s) => (
+                                <p key={s.n} className="text-[11px] text-muted-foreground leading-snug">
+                                  <span className="text-primary font-bold">[{s.n}]</span> {s.title}
+                                </p>
+                              ))}
+                            </div>
+                          )}
                         </>
                       ) : (
                         <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />

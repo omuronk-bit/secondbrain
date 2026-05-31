@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { TopBar } from "./components/navigation/TopBar";
 import { BottomNav } from "./components/navigation/BottomNav";
 import { Toaster } from "./components/ui/toaster";
+import { AskFab } from "./components/shared/AskFab";
 import { Today } from "./pages/Today";
 import { Capture } from "./pages/Capture";
 import { Media } from "./pages/Media";
@@ -59,6 +60,7 @@ export default function App() {
         <main className="flex-1 pt-[calc(3.5rem+env(safe-area-inset-top))] pb-[calc(60px+env(safe-area-inset-bottom))] md:pb-0 overflow-x-hidden">
           <Pages />
         </main>
+        <AskFab />
         <BottomNav />
       </WouterRouter>
       <Toaster />

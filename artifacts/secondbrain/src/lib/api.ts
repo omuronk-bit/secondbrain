@@ -116,6 +116,16 @@ export const streamAsk = (question: string, onChunk: (full: string) => void): Pr
 export const streamChat = (messages: Msg[], onChunk: (full: string) => void): Promise<string> =>
   streamPost('/chat/stream', { messages }, onChunk);
 
+export interface SourceHit {
+  n: number;
+  path: string;
+  title: string;
+  excerpt: string;
+}
+/** The vault notes that informed an answer (for citation cards). */
+export const retrieveSources = (question: string): Promise<{ sources: SourceHit[] }> =>
+  apiFetch('/retrieve', { method: 'POST', body: JSON.stringify({ question }) }).then((r) => r.json());
+
 /** Transcribe a short audio clip to text (local whisper). */
 export async function transcribeAudio(blob: Blob, filename = 'voice.webm'): Promise<{ text: string }> {
   const fd = new FormData();
