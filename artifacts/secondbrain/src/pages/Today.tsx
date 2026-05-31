@@ -1,7 +1,8 @@
 import { useState, useMemo } from 'react';
+import { useLocation } from 'wouter';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  ChevronRight, Activity, AlertCircle, CheckCircle2,
+  ChevronRight, Activity, AlertCircle, CheckCircle2, Sparkles,
   Play, BookOpen, LayoutList, LayoutGrid,
   Briefcase, User, Globe, Clock, TrendingUp,
   Bookmark, Star, X, ChevronUp,
@@ -380,6 +381,12 @@ const SectionHeader = ({ dot, icon, label, count, expanded, onToggle, muted }: S
 
 type FilterMode = 'all' | 'work' | 'personal';
 
+const ASK_SUGGESTIONS = [
+  "What's my latest churn & net adds?",
+  'What should I read first today?',
+  "What's new in AI agents?",
+];
+
 interface ItemUIState {
   saved: boolean;
   memo: boolean;
@@ -388,8 +395,18 @@ interface ItemUIState {
 }
 
 export const Today = () => {
+  const [, navigate] = useLocation();
+  const [askInput, setAskInput] = useState('');
   const [items, setItems] = useState<Item[]>(getItems());
   const [filter, setFilter] = useState<FilterMode>('all');
+
+  // Hand a question to the Ask page (which auto-runs it on mount).
+  const askQuestion = (q: string) => {
+    const t = q.trim();
+    if (!t) return;
+    sessionStorage.setItem('sb_ask_q', t);
+    navigate('/ask');
+  };
   const [compact, setCompact] = useState(false);
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
     mustConsume: true,
@@ -545,6 +562,42 @@ export const Today = () => {
             {compact ? <LayoutGrid className="w-3.5 h-3.5" /> : <LayoutList className="w-3.5 h-3.5" />}
             {compact ? 'Detailed' : 'Compact'}
           </button>
+        </div>
+
+        {/* ── ask hero ── */}
+        <div className="rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/[0.06] to-primary/[0.01] p-3.5 space-y-3">
+          <form
+            onSubmit={(e) => { e.preventDefault(); askQuestion(askInput); }}
+            className="relative"
+          >
+            <Sparkles className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-primary" />
+            <input
+              value={askInput}
+              onChange={(e) => setAskInput(e.target.value)}
+              placeholder="Ask your second brain…"
+              className="w-full bg-card border-2 border-border/60 focus:border-primary/50 rounded-xl pl-9 pr-12 py-3 text-sm outline-none transition-colors"
+              data-testid="home-ask"
+            />
+            <button
+              type="submit"
+              disabled={!askInput.trim()}
+              aria-label="Ask"
+              className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-lg bg-primary text-primary-foreground flex items-center justify-center disabled:opacity-40 active:scale-95"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </form>
+          <div className="flex flex-wrap gap-1.5">
+            {ASK_SUGGESTIONS.map((q) => (
+              <button
+                key={q}
+                onClick={() => askQuestion(q)}
+                className="text-[11px] px-2.5 py-1 rounded-full bg-card border border-border/60 text-muted-foreground hover:text-foreground hover:border-primary/40 transition-colors active:scale-95"
+              >
+                {q}
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* ── summary strip ── */}

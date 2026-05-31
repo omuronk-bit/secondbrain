@@ -7,9 +7,9 @@ export const BottomNav = () => {
 
   const navItems = [
     { href: "/today", icon: Brain, label: "Today" },
+    { href: "/ask", icon: Search, label: "Ask" },
     { href: "/capture", icon: Plus, label: "Capture" },
     { href: "/notes", icon: NotebookPen, label: "Notes" },
-    { href: "/ask", icon: Search, label: "Ask" },
     { href: "/media", icon: Play, label: "Media" },
     { href: "/library", icon: BookOpen, label: "Library" },
   ];

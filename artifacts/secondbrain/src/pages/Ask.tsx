@@ -226,11 +226,10 @@ export const Ask = () => {
     return () => clearInterval(int);
   }, []);
 
-  const handleSubmit = (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
-    const trimmed = query.trim();
+  const runQuery = (raw: string) => {
+    const trimmed = raw.trim();
     if (!trimmed) return;
-
+    setQuery(trimmed);
     setIsGenerating(true);
     setResult(null);
     setShowAllItems(false);
@@ -250,10 +249,22 @@ export const Ask = () => {
     });
   };
 
-  const runSuggestedQuery = (q: string) => {
-    setQuery(q);
-    textareaRef.current?.focus();
+  const handleSubmit = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    runQuery(query);
   };
+
+  // Auto-run a question handed off from the home ask bar.
+  useEffect(() => {
+    const q = sessionStorage.getItem('sb_ask_q');
+    if (q) {
+      sessionStorage.removeItem('sb_ask_q');
+      runQuery(q);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const runSuggestedQuery = (q: string) => runQuery(q);
 
   const handleAction = (label: string) => {
     setActionFlash(label);
