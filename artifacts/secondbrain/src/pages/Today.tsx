@@ -18,6 +18,7 @@ import { BriefCard } from '../components/shared/BriefCard';
 import { CarryOvers } from '../components/shared/CarryOvers';
 import { RecallCard } from '../components/shared/RecallCard';
 import { GrowCard } from '../components/shared/GrowCard';
+import { FeedbackButtons } from '../components/shared/FeedbackButtons';
 import { PullToRefresh } from '../components/shared/PullToRefresh';
 import { Swipeable } from '../components/shared/Swipeable';
 import { toast } from '../hooks/use-toast';
@@ -306,6 +307,7 @@ const SkimCard = ({ item, source, compact, state, onAction, onToggleSummary }: S
           <Star className={cn('w-3.5 h-3.5', state.memo && 'fill-current')} />
           Memo
         </button>
+        <FeedbackButtons contentId={item.id} className="ml-auto" />
         <button
           onClick={() => onAction('dismiss', item.id)}
           data-testid={`skim-dismiss-btn-${item.id}`}
