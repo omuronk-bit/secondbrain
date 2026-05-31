@@ -50,17 +50,23 @@ function SignalBar({ quality }: { quality: 'high' | 'medium' | 'low' }) {
 function ThemesSection({ items }: { items: Item[] }) {
   const [expanded, setExpanded] = useState<string | null>(null);
 
-  const themes = THEME_DEFS.map(def => {
-    const matched = items.filter(item =>
-      item.topics.some(t => def.topicKeywords.some(k => t.toLowerCase().includes(k.toLowerCase())))
-    );
-    const saved = matched.filter(i => i.status === 'saved');
-    const topSrc = matched.length
-      ? (() => { const freq: Record<string, number> = {}; matched.forEach(i => { freq[i.creator] = (freq[i.creator] || 0) + 1; }); return Object.entries(freq).sort((a, b) => b[1] - a[1])[0]?.[0] ?? '—'; })()
-      : '—';
-    const recent = matched.sort((a, b) => new Date(b.ingestedAt).getTime() - new Date(a.ingestedAt).getTime())[0];
-    return { def, matched, saved, topSrc, recent };
-  });
+  // Themes derived from the real topics on your items (not hardcoded keyword sets).
+  const pretty = (t: string) => t.replace(/[_-]/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+  const byTopic: Record<string, Item[]> = {};
+  items.forEach((item) => item.topics.forEach((t) => { (byTopic[t] = byTopic[t] || []).push(item); }));
+  const themes = Object.entries(byTopic)
+    .sort((a, b) => b[1].length - a[1].length)
+    .map(([topic, matched]) => {
+      const def = { id: topic, icon: pretty(topic).charAt(0), label: pretty(topic),
+        description: `${matched.length} item${matched.length !== 1 ? 's' : ''} from your feeds`,
+        openQuestions: [] as string[] };
+      const saved = matched.filter((i) => i.status === 'saved');
+      const freq: Record<string, number> = {};
+      matched.forEach((i) => { freq[i.creator] = (freq[i.creator] || 0) + 1; });
+      const topSrc = Object.entries(freq).sort((a, b) => b[1] - a[1])[0]?.[0] ?? '—';
+      const recent = [...matched].sort((a, b) => new Date(b.ingestedAt).getTime() - new Date(a.ingestedAt).getTime())[0];
+      return { def, matched, saved, topSrc, recent };
+    });
 
   return (
     <div className="space-y-2">
@@ -91,11 +97,10 @@ function ThemesSection({ items }: { items: Item[] }) {
               <motion.div initial={{ height: 0 }} animate={{ height: 'auto' }} exit={{ height: 0 }} className="overflow-hidden">
                 <div className="border-t border-border/50 p-4 space-y-4 bg-muted/10">
                   {/* Stats row */}
-                  <div className="grid grid-cols-3 gap-3">
+                  <div className="grid grid-cols-2 gap-3">
                     {[
                       { label: 'Top source', value: topSrc },
                       { label: 'Last activity', value: recent ? dateFmt(recent.ingestedAt) : '—' },
-                      { label: 'Open questions', value: `${def.openQuestions.length}` },
                     ].map(({ label, value }) => (
                       <div key={label} className="bg-background border border-border/50 rounded-lg p-2.5 text-center">
                         <p className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground mb-1">{label}</p>
@@ -104,21 +109,22 @@ function ThemesSection({ items }: { items: Item[] }) {
                     ))}
                   </div>
 
-                  {/* Open questions */}
-                  <div>
-                    <div className="flex items-center gap-1.5 mb-2">
-                      <HelpCircle className="w-3 h-3 text-amber-500" />
-                      <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Open Questions</p>
+                  {def.openQuestions.length > 0 && (
+                    <div>
+                      <div className="flex items-center gap-1.5 mb-2">
+                        <HelpCircle className="w-3 h-3 text-amber-500" />
+                        <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Open Questions</p>
+                      </div>
+                      <ul className="space-y-1.5">
+                        {def.openQuestions.map((q, i) => (
+                          <li key={i} className="text-xs text-foreground/80 flex items-start gap-2">
+                            <span className="mt-1 w-1 h-1 rounded-full bg-amber-500/70 shrink-0" />
+                            {q}
+                          </li>
+                        ))}
+                      </ul>
                     </div>
-                    <ul className="space-y-1.5">
-                      {def.openQuestions.map((q, i) => (
-                        <li key={i} className="text-xs text-foreground/80 flex items-start gap-2">
-                          <span className="mt-1 w-1 h-1 rounded-full bg-amber-500/70 shrink-0" />
-                          {q}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
+                  )}
 
                   {/* Items preview */}
                   {matched.length > 0 && (
