@@ -4,7 +4,7 @@ import {
   Podcast, Youtube, FileText, Mail, FileIcon,
   Play, Bookmark, Star, X, ChevronLeft, ChevronDown,
   Clock, Calendar, Tag, TrendingUp, Zap, BarChart2,
-  CheckCircle, Circle, Timer, RefreshCw, Filter
+  CheckCircle, Circle, Timer, RefreshCw, Filter, Sparkles
 } from 'lucide-react';
 import { Item, Segment, Source } from '../types';
 import { getItems, getStorageItem, setStorageItem } from '../utils/storage';
@@ -105,6 +105,17 @@ const ConsumeBadge = ({ state }: { state: ConsumeState }) => {
 
 // ─── media queue card ─────────────────────────────────────────────────────────
 
+// Plain-language reason an item surfaced — replaces raw R/N/I scores on the card face.
+function whyNow(item: Item): string {
+  const bits: string[] = [];
+  if (item.importanceScore >= 0.82) bits.push('high priority');
+  if (item.relevanceScore >= 0.75 && item.topics[0]) bits.push(`on ${item.topics[0].replace(/[_-]/g, ' ')}`);
+  else if (item.relevanceScore >= 0.7) bits.push('matches your topics');
+  if (item.noveltyScore >= 0.75) bits.push('a fresh angle');
+  const s = bits.join(' · ');
+  return s ? s.charAt(0).toUpperCase() + s.slice(1) : 'Surfaced from your feeds';
+}
+
 interface QueueCardProps {
   item: Item;
   source?: Source;
@@ -117,6 +128,7 @@ interface QueueCardProps {
 
 const QueueCard = ({ item, source, consumeState, segmentCount, savedSegCount, onOpen, onSetConsumeState }: QueueCardProps) => {
   const isDismissed = consumeState === 'dismissed';
+  const [showSignals, setShowSignals] = useState(false);
 
   return (
     <motion.div
@@ -155,12 +167,26 @@ const QueueCard = ({ item, source, consumeState, segmentCount, savedSegCount, on
         {/* summary */}
         <p className="text-sm text-muted-foreground leading-relaxed line-clamp-2">{item.summary}</p>
 
-        {/* scores */}
-        <ScoreDisplay relevance={item.relevanceScore} novelty={item.noveltyScore} importance={item.importanceScore} />
+        {/* why now — plain-language reason in place of raw scores */}
+        <div className="flex items-start gap-1.5 text-[12px] leading-snug text-foreground/75 bg-secondary/60 rounded-xl px-2.5 py-2">
+          <Sparkles className="w-3 h-3 text-primary mt-[3px] shrink-0" />
+          <span><span className="font-semibold text-foreground">Why now:</span> {whyNow(item)}</span>
+        </div>
+
+        {showSignals && (
+          <ScoreDisplay relevance={item.relevanceScore} novelty={item.noveltyScore} importance={item.importanceScore} className="px-1" />
+        )}
 
         {/* footer */}
         <div className="flex items-center gap-2 pt-1 border-t border-border/40 flex-wrap">
           <ConsumeBadge state={consumeState} />
+
+          <button
+            onClick={() => setShowSignals(s => !s)}
+            className="flex items-center gap-1 text-[10px] font-semibold text-muted-foreground hover:text-foreground transition-colors"
+          >
+            signals <ChevronDown className={cn('w-3 h-3 transition-transform', showSignals && 'rotate-180')} />
+          </button>
 
           {segmentCount > 0 && (
             <span className="flex items-center gap-1 text-[10px] font-semibold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-900/40 px-2 py-0.5 rounded-full">

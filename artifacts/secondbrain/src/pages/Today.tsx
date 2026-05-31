@@ -536,6 +536,17 @@ export const Today = () => {
   const hour = new Date().getHours();
   const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
 
+  // At-a-glance summary — one human sentence, and only the counters that are non-zero.
+  const summaryHead = mustConsume.length > 0
+    ? `${mustConsume.length} must-read ${mustConsume.length === 1 ? 'item' : 'items'} flagged`
+    : totalActive > 0 ? 'Nothing urgent today' : 'Your briefing is clear';
+  const summaryParts: string[] = [];
+  if (skimCandidates.length) summaryParts.push(`${skimCandidates.length} to skim`);
+  if (bestSegments.length) summaryParts.push(`${bestSegments.length} segment${bestSegments.length === 1 ? '' : 's'}`);
+  if (savedCount + memoCount) summaryParts.push(`${savedCount + memoCount} saved`);
+  if (timeSaved > 0) summaryParts.push(`~${formatTime(timeSaved)} saved`);
+  const summarySub = summaryParts.length ? summaryParts.join(' · ') : 'Skim your queue when you have a moment.';
+
   return (
     <div className="min-h-full bg-background pb-2" data-testid="today-page">
       <PullToRefresh onRefresh={refresh}>
@@ -544,24 +555,21 @@ export const Today = () => {
         {/* ── date header ── */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-black tracking-tight text-foreground">{greeting}, Ömür</h1>
+            <h1 className="text-[1.7rem] font-bold tracking-tight text-foreground leading-tight">{greeting}, <span className="italic font-semibold text-primary">Ömür</span></h1>
             <p className="text-xs text-muted-foreground flex items-center gap-1.5 mt-0.5">
               <Activity className="w-3.5 h-3.5 text-primary" />
-              {dateStr} · Today's briefing
+              {dateStr} · today in your second brain
             </p>
           </div>
           <button
             onClick={() => setCompact(c => !c)}
             data-testid="compact-toggle"
-            className={cn(
-              'flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium border transition-all',
-              compact
-                ? 'bg-primary text-primary-foreground border-primary'
-                : 'bg-card text-muted-foreground border-border hover:bg-secondary',
-            )}
+            title="Card density"
+            aria-label={`Card density: ${compact ? 'compact' : 'comfortable'} — tap to switch`}
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-[11px] font-semibold border bg-card text-muted-foreground border-border hover:bg-secondary transition-all active:scale-95"
           >
             {compact ? <LayoutGrid className="w-3.5 h-3.5" /> : <LayoutList className="w-3.5 h-3.5" />}
-            {compact ? 'Detailed' : 'Compact'}
+            {compact ? 'Compact' : 'Comfortable'}
           </button>
         </div>
 
@@ -604,27 +612,20 @@ export const Today = () => {
         {/* ── your brief ── */}
         <BriefCard />
 
-        {/* ── summary strip ── */}
-        <div className="grid grid-cols-5 gap-0 rounded-xl border bg-card shadow-sm overflow-hidden" data-testid="summary-strip">
-          {[
-            { label: 'Reviewed', value: totalActive, icon: <Activity className="w-3.5 h-3.5" /> },
-            { label: 'Must-read', value: mustConsume.length, icon: <TrendingUp className="w-3.5 h-3.5 text-emerald-500" /> },
-            { label: 'Segments', value: bestSegments.length, icon: <Play className="w-3.5 h-3.5 text-blue-500" /> },
-            { label: 'Time saved', value: formatTime(timeSaved), icon: <Clock className="w-3.5 h-3.5 text-amber-500" /> },
-            { label: 'Memo', value: savedCount + memoCount, icon: <Star className="w-3.5 h-3.5 text-amber-500" /> },
-          ].map((stat, i) => (
-            <div
-              key={stat.label}
-              className={cn(
-                'flex flex-col items-center justify-center py-3 px-1 gap-0.5 text-center',
-                i < 4 && 'border-r border-border',
-              )}
-            >
-              <div className="text-muted-foreground">{stat.icon}</div>
-              <div className="text-base font-bold text-foreground leading-none">{stat.value}</div>
-              <div className="text-[9px] uppercase tracking-wide text-muted-foreground font-medium">{stat.label}</div>
-            </div>
-          ))}
+        {/* ── at a glance ── */}
+        <div className="rounded-2xl border bg-card shadow-sm px-4 py-3.5 flex items-center gap-3.5" data-testid="summary-strip">
+          <div className="w-12 h-12 rounded-2xl bg-primary/10 grid place-items-center shrink-0">
+            <span className="font-serif font-bold text-xl text-primary leading-none">{totalActive}</span>
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-bold text-foreground leading-snug">{summaryHead}</p>
+            <p className="text-xs text-muted-foreground mt-0.5">{summarySub}</p>
+          </div>
+          {mustConsume.length > 0 && (
+            <span className="shrink-0 text-[10px] font-bold uppercase tracking-wide px-2 py-1 rounded-full bg-amber-soft text-amber">
+              {mustConsume.length} hot
+            </span>
+          )}
         </div>
 
         {/* ── filter tabs ── */}

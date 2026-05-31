@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'wouter';
 import { getItems, getSources, getFeedback, getCaptures, getAskHistory } from '../utils/storage';
 import { syntheses, segments, THEME_DEFS, MOCK_DECISIONS, MOCK_FEEDBACK_LOG as MOCK_FEEDBACK } from '../data/mockData';
 import { EmptyState } from '../components/shared/EmptyState';
@@ -6,7 +7,7 @@ import {
   Hash, Database, Bookmark, Newspaper, CheckSquare, MessageSquare, Download,
   ChevronDown, ChevronUp, ChevronRight,
   ArrowUp, ArrowDown, Power, Eye, BarChart2,
-  Clock, HelpCircle, Sparkles, Tag,
+  Clock, HelpCircle, Sparkles, Tag, Play,
   CheckCircle2, Circle, AlertTriangle, ExternalLink, Package,
 } from 'lucide-react';
 import { cn } from '../lib/utils';
@@ -645,6 +646,22 @@ export const Library = () => {
 
       {/* Content */}
       <div className="flex-1 p-4 max-w-2xl mx-auto w-full">
+        {/* Media queue gateway — the reading/listening feed lives under Library */}
+        <Link
+          href="/media"
+          className="flex items-center gap-3 mb-4 rounded-2xl border bg-card shadow-sm px-4 py-3 hover:border-primary/40 transition-colors active:scale-[.99]"
+          data-testid="library-media-link"
+        >
+          <div className="w-10 h-10 rounded-xl bg-primary/10 grid place-items-center shrink-0 text-primary">
+            <Play className="w-5 h-5" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-bold text-foreground">Media queue</p>
+            <p className="text-xs text-muted-foreground">{items.length} item{items.length === 1 ? '' : 's'} to read &amp; listen</p>
+          </div>
+          <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
+        </Link>
+
         <AnimatePresence mode="wait">
           <motion.div
             key={activeTab}

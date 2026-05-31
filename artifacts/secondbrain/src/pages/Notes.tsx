@@ -8,6 +8,7 @@ import {
 } from '../lib/api';
 import { Markdown, toggleCheckbox } from '../components/shared/Markdown';
 import { NoteSkeletons } from '../components/shared/Skeleton';
+import { EmptyState } from '../components/shared/EmptyState';
 import { PullToRefresh } from '../components/shared/PullToRefresh';
 import { toast } from '../hooks/use-toast';
 import { motion } from 'framer-motion';
@@ -317,11 +318,22 @@ export const Notes = () => {
             {loading || busyOpen ? (
               <NoteSkeletons />
             ) : notes.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-16 text-center gap-2">
-                <div className="w-12 h-12 rounded-full bg-secondary flex items-center justify-center"><FileText className="w-5 h-5 text-muted-foreground" /></div>
-                <p className="text-sm font-semibold text-foreground">{query ? 'No notes match' : 'No notes yet'}</p>
-                <p className="text-xs text-muted-foreground">Tap “New” to write your first note.</p>
-              </div>
+              <EmptyState
+                className="mt-6"
+                icon={<FileText className="w-6 h-6" />}
+                title={query ? 'No notes match' : 'Nothing here yet'}
+                description={query
+                  ? 'Try a different search or clear the filter to see everything.'
+                  : 'Your notes feed Ask and the daily brief. Write one, or capture a link and it lands here.'}
+                action={!query && (
+                  <button
+                    onClick={openNew}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-foreground text-background text-xs font-bold active:scale-95 transition-transform"
+                  >
+                    <Plus className="w-3.5 h-3.5" /> Write a note
+                  </button>
+                )}
+              />
             ) : (
               <div className="space-y-2">
                 {notes.map((n, i) => (
