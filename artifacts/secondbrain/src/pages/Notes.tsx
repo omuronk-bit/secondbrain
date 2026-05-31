@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import {
   Search, Plus, ChevronLeft, Save, Trash2, Eye, Pencil, Loader2, FileText, CheckCircle2,
+  Heading, Bold, List, ListOrdered, ListChecks,
 } from 'lucide-react';
 import {
   listNotes, getNote, createNote, saveNote, deleteNote, NoteListItem,
@@ -124,6 +125,44 @@ export const Notes = () => {
     }
   }
 
+  const bodyRef = useRef<HTMLTextAreaElement>(null);
+
+  // Prefix each selected line — lists, numbering, tasks, headings.
+  function prefixLines(prefix: string | ((i: number) => string)) {
+    const ta = bodyRef.current;
+    if (!ta || !editor) return;
+    const { selectionStart, selectionEnd, value } = ta;
+    const lineStart = value.lastIndexOf('\n', selectionStart - 1) + 1;
+    const block = value.slice(lineStart, selectionEnd);
+    const lines = block.split('\n');
+    const newBlock = lines
+      .map((ln, i) => (typeof prefix === 'function' ? prefix(i) : prefix) + ln)
+      .join('\n');
+    const next = value.slice(0, lineStart) + newBlock + value.slice(selectionEnd);
+    setEditor({ ...editor, body: next });
+    setDirty(true);
+    const delta = newBlock.length - block.length;
+    requestAnimationFrame(() => {
+      ta.focus();
+      ta.setSelectionRange(selectionEnd + delta, selectionEnd + delta);
+    });
+  }
+
+  // Wrap the selection (e.g. **bold**).
+  function wrapSel(before: string, after: string) {
+    const ta = bodyRef.current;
+    if (!ta || !editor) return;
+    const { selectionStart, selectionEnd, value } = ta;
+    const sel = value.slice(selectionStart, selectionEnd) || 'text';
+    const next = value.slice(0, selectionStart) + before + sel + after + value.slice(selectionEnd);
+    setEditor({ ...editor, body: next });
+    setDirty(true);
+    requestAnimationFrame(() => {
+      ta.focus();
+      ta.setSelectionRange(selectionStart + before.length, selectionStart + before.length + sel.length);
+    });
+  }
+
   async function remove() {
     if (!editor?.id) {
       setEditor(null);
@@ -139,7 +178,7 @@ export const Notes = () => {
   if (editor) {
     return (
       <div className="min-h-full bg-background flex flex-col">
-        <div className="sticky top-[56px] z-30 bg-background/90 backdrop-blur-md border-b border-border">
+        <div className="sticky top-[calc(3.5rem+env(safe-area-inset-top))] z-30 bg-background/90 backdrop-blur-md border-b border-border">
           <div className="flex items-center gap-2 px-3 py-2 max-w-2xl mx-auto">
             <button onClick={() => setEditor(null)} className="p-2 rounded-lg hover:bg-secondary text-muted-foreground" aria-label="Back">
               <ChevronLeft className="w-5 h-5" />
@@ -188,13 +227,36 @@ export const Notes = () => {
           </div>
 
           {mode === 'edit' ? (
-            <textarea
-              value={editor.body}
-              onChange={(e) => { setEditor({ ...editor, body: e.target.value }); setDirty(true); }}
-              placeholder="Write your note in markdown… # heading, **bold**, - list, - [ ] task"
-              className="w-full min-h-[55vh] bg-transparent outline-none resize-none text-sm leading-relaxed font-mono placeholder:text-muted-foreground/40"
-              autoFocus
-            />
+            <>
+              <div className="flex items-center gap-0.5 pb-2 mb-1 border-b border-border/40">
+                {[
+                  { icon: Heading, label: 'Heading', fn: () => prefixLines('## ') },
+                  { icon: Bold, label: 'Bold', fn: () => wrapSel('**', '**') },
+                  { icon: List, label: 'Bullet list', fn: () => prefixLines('- ') },
+                  { icon: ListOrdered, label: 'Numbered list', fn: () => prefixLines((i) => `${i + 1}. `) },
+                  { icon: ListChecks, label: 'Checklist', fn: () => prefixLines('- [ ] ') },
+                ].map(({ icon: Icon, label, fn }) => (
+                  <button
+                    key={label}
+                    type="button"
+                    title={label}
+                    aria-label={label}
+                    onClick={fn}
+                    className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors active:scale-95"
+                  >
+                    <Icon className="w-4 h-4" />
+                  </button>
+                ))}
+              </div>
+              <textarea
+                ref={bodyRef}
+                value={editor.body}
+                onChange={(e) => { setEditor({ ...editor, body: e.target.value }); setDirty(true); }}
+                placeholder="Write your note in markdown… # heading, **bold**, - list, - [ ] task"
+                className="w-full min-h-[52vh] bg-transparent outline-none resize-none text-sm leading-relaxed font-mono placeholder:text-muted-foreground/40"
+                autoFocus
+              />
+            </>
           ) : (
             <div className="min-h-[40vh]">
               {editor.body.trim() ? <Markdown content={editor.body} onToggleCheckbox={onToggle} /> : <p className="text-sm text-muted-foreground/50 italic">Nothing yet — tap Edit to write.</p>}

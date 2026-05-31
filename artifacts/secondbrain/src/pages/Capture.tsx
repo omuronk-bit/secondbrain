@@ -489,7 +489,7 @@ export const Capture = () => {
     <div className="min-h-full bg-background flex flex-col" data-testid="capture-page">
 
       {/* ── mode tabs ── */}
-      <div className="sticky top-[56px] z-30 bg-background/90 backdrop-blur-md border-b border-border">
+      <div className="sticky top-[calc(3.5rem+env(safe-area-inset-top))] z-30 bg-background/90 backdrop-blur-md border-b border-border">
         <div className="flex overflow-x-auto gap-1.5 px-4 py-3 no-scrollbar">
           {MODES.map(m => (
             <button

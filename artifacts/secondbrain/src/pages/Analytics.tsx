@@ -225,7 +225,7 @@ export const Analytics = () => {
   return (
     <div className="min-h-full bg-background pb-8">
       {/* Header */}
-      <div className="sticky top-[56px] z-30 bg-background border-b border-border px-4 py-2.5 flex items-center gap-3">
+      <div className="sticky top-[calc(3.5rem+env(safe-area-inset-top))] z-30 bg-background border-b border-border px-4 py-2.5 flex items-center gap-3">
         <button onClick={() => navigate('/today')}
           className="p-1.5 -ml-1 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground transition-colors">
           <ArrowLeft className="w-4 h-4" />

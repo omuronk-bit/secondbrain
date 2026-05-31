@@ -539,7 +539,7 @@ export const Media = () => {
     <div className="relative h-full flex flex-col overflow-hidden bg-background" data-testid="media-page">
 
       {/* ── filter + sort bar ── */}
-      <div className="sticky top-[56px] z-30 bg-background/90 backdrop-blur-md border-b border-border">
+      <div className="sticky top-[calc(3.5rem+env(safe-area-inset-top))] z-30 bg-background/90 backdrop-blur-md border-b border-border">
         {/* filter pills */}
         <div className="flex overflow-x-auto gap-1.5 px-4 pt-3 pb-2 no-scrollbar">
           {FILTERS.map(f => (
