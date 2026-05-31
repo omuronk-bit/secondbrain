@@ -63,7 +63,7 @@ export function BriefCard() {
               ))}
             </div>
           )}
-          <div className="max-h-[60vh] overflow-y-auto">
+          <div className="max-h-[60vh] overflow-y-auto overflow-x-hidden">
             <Markdown content={b.body} />
           </div>
         </div>

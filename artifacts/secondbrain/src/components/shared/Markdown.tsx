@@ -172,5 +172,5 @@ export function Markdown({
     blocks.push(<p key={key++} className="my-2 leading-relaxed">{inline(buf.join(' '), `p${key}`)}</p>);
   }
 
-  return <div className="text-sm text-foreground">{blocks}</div>;
+  return <div className="text-sm text-foreground break-words [overflow-wrap:anywhere]">{blocks}</div>;
 }

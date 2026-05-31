@@ -8,7 +8,7 @@ import {
   Loader2, CheckCircle2, ChevronDown, ChevronUp,
   Clock, Tag, Briefcase, User, Users,
   ExternalLink, Eye, X, ArrowRight,
-  AudioWaveform, Sparkles, AlertCircle
+  AudioWaveform, Sparkles, AlertCircle, ClipboardPaste
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { getCaptures, saveCaptures, getSources, saveSources } from '../utils/storage';
@@ -334,29 +334,29 @@ const sourceSchema = z.object({
 type CaptureMode = 'link' | 'voice' | 'meeting' | 'text' | 'file' | 'source';
 
 const MODES: { id: CaptureMode; icon: React.ReactNode; label: string }[] = [
-  { id: 'link', icon: <Link2 className="w-5 h-5" />, label: 'Link' },
-  { id: 'voice', icon: <Mic className="w-5 h-5" />, label: 'Voice' },
-  { id: 'meeting', icon: <Users className="w-5 h-5" />, label: 'Meeting' },
-  { id: 'text', icon: <FileText className="w-5 h-5" />, label: 'Text' },
   { id: 'file', icon: <Upload className="w-5 h-5" />, label: 'File' },
+  { id: 'text', icon: <FileText className="w-5 h-5" />, label: 'Text' },
+  { id: 'voice', icon: <Mic className="w-5 h-5" />, label: 'Voice' },
+  { id: 'link', icon: <Link2 className="w-5 h-5" />, label: 'Link' },
+  { id: 'meeting', icon: <Users className="w-5 h-5" />, label: 'Meeting' },
   { id: 'source', icon: <PlusCircle className="w-5 h-5" />, label: 'Source' },
 ];
 
 // ─── main component ───────────────────────────────────────────────────────────
 
 export const Capture = () => {
-  const [mode, setMode] = useState<CaptureMode>('link');
+  const [mode, setMode] = useState<CaptureMode>('file');
   const [captures, setCaptures] = useState<CapturedItem[]>(getCaptures);
   const [sources, setSources] = useState<Source[]>(getSources);
 
   // Link form state
   const [linkPriority, setLinkPriority] = useState<Priority>('medium');
-  const [linkCategory, setLinkCategory] = useState<CaptureCategory>('work');
+  const [linkCategory, setLinkCategory] = useState<CaptureCategory>('both');
   const [linkSuccess, setLinkSuccess] = useState(false);
 
   // Text state
   const [textPriority, setTextPriority] = useState<Priority>('medium');
-  const [textCategory, setTextCategory] = useState<CaptureCategory>('work');
+  const [textCategory, setTextCategory] = useState<CaptureCategory>('both');
   const [textSuccess, setTextSuccess] = useState(false);
 
   // Source form state
@@ -414,6 +414,17 @@ export const Capture = () => {
       return next;
     });
   }, []);
+
+  // ── Paste a URL from the clipboard straight into the link field (mobile-friendly).
+  const pasteLinkUrl = async () => {
+    try {
+      const txt = (await navigator.clipboard.readText()).trim();
+      if (txt) linkForm.setValue('url', txt, { shouldValidate: true, shouldDirty: true });
+      else toast({ title: 'Clipboard is empty' });
+    } catch {
+      toast({ title: 'Clipboard unavailable', description: 'Paste the link manually instead.' });
+    }
+  };
 
   // ── Link submit
   const onLinkSubmit = (data: z.infer<typeof linkSchema>) => {
@@ -515,18 +526,40 @@ export const Capture = () => {
         {mode === 'link' && (
           <motion.div key="link" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
             className="bg-card border rounded-2xl p-5 shadow-sm space-y-4">
-            <h2 className="font-bold text-base text-foreground">Capture a link</h2>
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-lg bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
+                <Link2 className="w-4 h-4" />
+              </div>
+              <div>
+                <h2 className="font-bold text-base text-foreground leading-tight">Capture a link</h2>
+                <p className="text-[11px] text-muted-foreground">Save an article, video, or page to your vault</p>
+              </div>
+            </div>
 
             <form onSubmit={linkForm.handleSubmit(onLinkSubmit)} className="space-y-4">
               <Field label="URL *" error={linkForm.formState.errors.url?.message}>
-                <input
-                  {...linkForm.register('url')}
-                  type="url"
-                  placeholder="https://..."
-                  className={inputCls}
-                  autoFocus
-                  data-testid="link-url-input"
-                />
+                <div className="relative">
+                  <Link2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+                  <input
+                    {...linkForm.register('url')}
+                    type="url"
+                    inputMode="url"
+                    autoComplete="off"
+                    autoCapitalize="off"
+                    placeholder="https://..."
+                    className={cn(inputCls, 'pl-9 pr-[4.5rem]')}
+                    autoFocus
+                    data-testid="link-url-input"
+                  />
+                  <button
+                    type="button"
+                    onClick={pasteLinkUrl}
+                    className="absolute right-1.5 top-1/2 -translate-y-1/2 flex items-center gap-1 px-2.5 py-1.5 rounded-md bg-secondary text-xs font-semibold text-foreground hover:bg-secondary/70 active:scale-95 transition-all"
+                    data-testid="link-paste"
+                  >
+                    <ClipboardPaste className="w-3.5 h-3.5" />Paste
+                  </button>
+                </div>
               </Field>
 
               <Field label="Title (optional)">
