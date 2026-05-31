@@ -1,10 +1,12 @@
 import { getApiBase, getToken } from './api';
 
-function urlB64ToUint8Array(b64: string): Uint8Array {
+function urlB64ToUint8Array(b64: string): Uint8Array<ArrayBuffer> {
   const padding = '='.repeat((4 - (b64.length % 4)) % 4);
   const base64 = (b64 + padding).replace(/-/g, '+').replace(/_/g, '/');
   const raw = atob(base64);
-  return Uint8Array.from([...raw].map((c) => c.charCodeAt(0)));
+  const out = new Uint8Array(new ArrayBuffer(raw.length));
+  for (let i = 0; i < raw.length; i++) out[i] = raw.charCodeAt(i);
+  return out;
 }
 
 export function pushSupported(): boolean {
