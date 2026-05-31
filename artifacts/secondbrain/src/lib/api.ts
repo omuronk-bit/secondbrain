@@ -152,8 +152,8 @@ export const setItemFeedback = async (id: string, signal: FeedbackSignal): Promi
 };
 
 // Mentor "depth": foundational reading + blind spots from your knowledge graph.
-export interface GoDeeperItem { title: string; theme: string; why: string; }
-export interface BlindSpotItem { title: string; why: string; ref: string; }
+export interface GoDeeperItem { id: number; title: string; theme: string; why: string; }
+export interface BlindSpotItem { id: number; title: string; why: string; ref: string; }
 export interface GrowResponse {
   week: string;
   goDeeper: GoDeeperItem[];
@@ -163,6 +163,9 @@ export const fetchGrow = (): Promise<GrowResponse> =>
   apiFetch('/grow').then((r) => r.json());
 export const generateGrow = (): Promise<GrowResponse> =>
   apiFetch('/grow/generate', { method: 'POST' }).then((r) => r.json());
+// Reflect on a recommendation: 'done' (read it / got it) or 'dismissed' (disagree / not for me).
+export const setGrowStatus = (id: number, status: 'done' | 'dismissed'): Promise<{ ok: boolean }> =>
+  apiFetch(`/grow/${id}/status`, { method: 'POST', body: JSON.stringify({ status }) }).then((r) => r.json());
 
 // Self-improvement loop: approve/reject the daily tuner's source/interest suggestions.
 export interface TuningCandidate {
