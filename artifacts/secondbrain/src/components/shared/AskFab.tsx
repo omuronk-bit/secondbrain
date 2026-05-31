@@ -1,10 +1,11 @@
 import { useLocation } from 'wouter';
 import { Sparkles } from 'lucide-react';
 
-// Floating "ask from anywhere" button — opens Ask from any screen except Ask itself.
+// Floating "ask from anywhere" button. Hidden on /ask (redundant) and /today
+// (Today already has the ask hero, and the FAB overlapped the carry-over controls).
 export function AskFab() {
   const [loc, navigate] = useLocation();
-  if (loc.startsWith('/ask')) return null;
+  if (loc.startsWith('/ask') || loc.startsWith('/today')) return null;
   return (
     <button
       onClick={() => navigate('/ask')}
