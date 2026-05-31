@@ -116,6 +116,22 @@ export const streamAsk = (question: string, onChunk: (full: string) => void): Pr
 export const streamChat = (messages: Msg[], onChunk: (full: string) => void): Promise<string> =>
   streamPost('/chat/stream', { messages }, onChunk);
 
+/** Transcribe a short audio clip to text (local whisper). */
+export async function transcribeAudio(blob: Blob, filename = 'voice.webm'): Promise<{ text: string }> {
+  const fd = new FormData();
+  fd.append('file', blob, filename);
+  const res = await fetch(`${getApiBase()}/transcribe`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${getToken()}` },
+    body: fd,
+  });
+  if (!res.ok) {
+    const t = await res.text().catch(() => '');
+    throw new Error(`API ${res.status}: ${t.slice(0, 160) || res.statusText}`);
+  }
+  return res.json();
+}
+
 export const captureApi = (
   text: string,
   type = 'note',

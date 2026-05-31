@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
-import { Sparkles, ArrowUp, Loader2, Plus, Clock } from 'lucide-react';
-import { streamChat, Msg } from '../lib/api';
+import { Sparkles, ArrowUp, Loader2, Plus, Clock, Mic, Square, Volume2, VolumeX } from 'lucide-react';
+import { streamChat, transcribeAudio, Msg } from '../lib/api';
 import { getAskHistory, saveAskHistory } from '../utils/storage';
 import { Markdown } from '../components/shared/Markdown';
 import { cn } from '../lib/utils';
@@ -17,7 +17,12 @@ export const Ask = () => {
   const [input, setInput] = useState('');
   const [busy, setBusy] = useState(false);
   const [history, setHistory] = useState<string[]>(getAskHistory());
+  const [recording, setRecording] = useState(false);
+  const [transcribing, setTranscribing] = useState(false);
+  const [speakingIdx, setSpeakingIdx] = useState<number | null>(null);
   const endRef = useRef<HTMLDivElement>(null);
+  const recRef = useRef<MediaRecorder | null>(null);
+  const chunksRef = useRef<Blob[]>([]);
 
   function send(raw: string) {
     const q = raw.trim();
@@ -47,6 +52,57 @@ export const Ask = () => {
       })
       .finally(() => setBusy(false));
   }
+
+  // ── voice in: record → transcribe (whisper) → ask ──
+  async function startRec() {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mime = MediaRecorder.isTypeSupported('audio/webm')
+        ? 'audio/webm'
+        : MediaRecorder.isTypeSupported('audio/mp4')
+          ? 'audio/mp4'
+          : '';
+      const rec = new MediaRecorder(stream, mime ? { mimeType: mime } : undefined);
+      chunksRef.current = [];
+      rec.ondataavailable = (e) => { if (e.data.size) chunksRef.current.push(e.data); };
+      rec.onstop = async () => {
+        stream.getTracks().forEach((t) => t.stop());
+        const type = rec.mimeType || 'audio/webm';
+        const ext = type.includes('mp4') ? 'm4a' : 'webm';
+        setTranscribing(true);
+        try {
+          const { text } = await transcribeAudio(new Blob(chunksRef.current, { type }), `voice.${ext}`);
+          if (text.trim()) send(text);
+        } catch {
+          /* transcription failed — ignore */
+        } finally {
+          setTranscribing(false);
+        }
+      };
+      recRef.current = rec;
+      rec.start();
+      setRecording(true);
+    } catch {
+      /* mic denied/unavailable */
+    }
+  }
+  function stopRec() {
+    setRecording(false);
+    recRef.current?.stop();
+  }
+
+  // ── voice out: read an answer aloud (browser TTS) ──
+  function speak(idx: number, text: string) {
+    if (!('speechSynthesis' in window)) return;
+    window.speechSynthesis.cancel();
+    if (speakingIdx === idx) { setSpeakingIdx(null); return; }
+    const plain = text.replace(/\[([^\]]+)\]\([^)]+\)/g, '$1').replace(/[#*`>_~|]/g, '');
+    const u = new SpeechSynthesisUtterance(plain);
+    u.onend = () => setSpeakingIdx(null);
+    setSpeakingIdx(idx);
+    window.speechSynthesis.speak(u);
+  }
+  useEffect(() => () => { if ('speechSynthesis' in window) window.speechSynthesis.cancel(); }, []);
 
   // Auto-run a question handed off from the home ask bar.
   useEffect(() => {
@@ -130,7 +186,20 @@ export const Ask = () => {
                     </div>
                   ) : (
                     <div className="max-w-[92%] bg-card border border-border/60 rounded-2xl rounded-bl-md px-3.5 py-2.5">
-                      {m.content ? <Markdown content={m.content} /> : <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />}
+                      {m.content ? (
+                        <>
+                          <Markdown content={m.content} />
+                          <button
+                            onClick={() => speak(i, m.content)}
+                            aria-label={speakingIdx === i ? 'Stop' : 'Read aloud'}
+                            className="mt-1.5 text-muted-foreground hover:text-primary transition-colors active:scale-95"
+                          >
+                            {speakingIdx === i ? <VolumeX className="w-3.5 h-3.5" /> : <Volume2 className="w-3.5 h-3.5" />}
+                          </button>
+                        </>
+                      ) : (
+                        <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+                      )}
                     </div>
                   )}
                 </div>
@@ -147,6 +216,18 @@ export const Ask = () => {
           onSubmit={(e) => { e.preventDefault(); send(input); }}
           className="max-w-2xl mx-auto flex items-end gap-2"
         >
+          <button
+            type="button"
+            onClick={recording ? stopRec : startRec}
+            disabled={transcribing || busy}
+            aria-label={recording ? 'Stop recording' : 'Ask by voice'}
+            className={cn(
+              'w-10 h-10 rounded-full flex items-center justify-center shrink-0 active:scale-95 transition-colors disabled:opacity-40',
+              recording ? 'bg-red-500 text-white animate-pulse' : 'bg-secondary text-muted-foreground hover:text-foreground',
+            )}
+          >
+            {transcribing ? <Loader2 className="w-4 h-4 animate-spin" /> : recording ? <Square className="w-4 h-4 fill-current" /> : <Mic className="w-4 h-4" />}
+          </button>
           <textarea
             value={input}
             onChange={(e) => setInput(e.target.value)}
