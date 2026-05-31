@@ -81,16 +81,20 @@ export const fetchBrief = (): Promise<{ daily: Brief | null; weekly: Brief | nul
 export const askApi = (question: string): Promise<{ answer: string }> =>
   apiFetch('/ask', { method: 'POST', body: JSON.stringify({ question }) }).then((r) => r.json());
 
-/** Stream an answer; onChunk receives the full text so far. Returns the final text. */
-export async function streamAsk(question: string, onChunk: (full: string) => void): Promise<string> {
-  const res = await fetch(`${getApiBase()}/ask/stream`, {
+export interface Msg {
+  role: 'user' | 'assistant';
+  content: string;
+}
+
+async function streamPost(path: string, body: unknown, onChunk: (full: string) => void): Promise<string> {
+  const res = await fetch(`${getApiBase()}${path}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
-    body: JSON.stringify({ question }),
+    body: JSON.stringify(body),
   });
   if (!res.ok || !res.body) {
-    const body = await res.text().catch(() => '');
-    throw new Error(`API ${res.status}: ${body.slice(0, 200) || res.statusText}`);
+    const t = await res.text().catch(() => '');
+    throw new Error(`API ${res.status}: ${t.slice(0, 200) || res.statusText}`);
   }
   const reader = res.body.getReader();
   const decoder = new TextDecoder();
@@ -103,6 +107,14 @@ export async function streamAsk(question: string, onChunk: (full: string) => voi
   }
   return full;
 }
+
+/** Stream a one-shot answer; onChunk receives the full text so far. */
+export const streamAsk = (question: string, onChunk: (full: string) => void): Promise<string> =>
+  streamPost('/ask/stream', { question }, onChunk);
+
+/** Stream a multi-turn answer over a conversation. */
+export const streamChat = (messages: Msg[], onChunk: (full: string) => void): Promise<string> =>
+  streamPost('/chat/stream', { messages }, onChunk);
 
 export const captureApi = (
   text: string,
