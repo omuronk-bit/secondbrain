@@ -116,6 +116,10 @@ export const streamAsk = (question: string, onChunk: (full: string) => void): Pr
 export const streamChat = (messages: Msg[], onChunk: (full: string) => void): Promise<string> =>
   streamPost('/chat/stream', { messages }, onChunk);
 
+/** Deep agentic answer (Opus tool-use loop: search + kpi lookup + calc). Slower, non-streamed. */
+export const askDeep = (question: string): Promise<{ answer: string }> =>
+  apiFetch('/deep', { method: 'POST', body: JSON.stringify({ question }) }).then((r) => r.json());
+
 export interface SourceHit {
   n: number;
   path: string;

@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
-import { Sparkles, ArrowUp, Loader2, Plus, Clock, Mic, Square, Volume2, VolumeX } from 'lucide-react';
-import { streamChat, transcribeAudio, retrieveSources, Msg, SourceHit } from '../lib/api';
+import { Sparkles, ArrowUp, Loader2, Plus, Clock, Mic, Square, Volume2, VolumeX, Zap } from 'lucide-react';
+import { streamChat, askDeep, transcribeAudio, retrieveSources, Msg, SourceHit } from '../lib/api';
 import { getAskHistory, saveAskHistory } from '../utils/storage';
 import { Markdown } from '../components/shared/Markdown';
 import { cn } from '../lib/utils';
@@ -19,6 +19,7 @@ export const Ask = () => {
   const [input, setInput] = useState('');
   const [busy, setBusy] = useState(false);
   const [history, setHistory] = useState<string[]>(getAskHistory());
+  const [deep, setDeep] = useState(false);
   const [recording, setRecording] = useState(false);
   const [transcribing, setTranscribing] = useState(false);
   const [speakingIdx, setSpeakingIdx] = useState<number | null>(null);
@@ -37,34 +38,23 @@ export const Ask = () => {
     setHistory(nh);
     saveAskHistory(nh);
 
-    streamChat(convo, (full) => {
-      setMessages((m) => {
-        const c = [...m];
-        c[c.length - 1] = { ...c[c.length - 1], role: 'assistant', content: full };
-        return c;
-      });
-    })
-      .then(() =>
-        retrieveSources(q)
-          .then(({ sources }) => {
-            setMessages((m) => {
-              const c = [...m];
-              const last = c[c.length - 1];
-              if (last?.role === 'assistant') c[c.length - 1] = { ...last, sources };
-              return c;
-            });
-          })
-          .catch(() => { /* sources are best-effort */ }),
-      )
-      .catch((e) => {
-        const msg = e instanceof Error ? e.message : String(e);
-        setMessages((m) => {
-          const c = [...m];
-          c[c.length - 1] = { role: 'assistant', content: `⚠️ Query failed — ${msg}` };
+    const setAnswer = (content: string) =>
+      setMessages((m) => { const c = [...m]; c[c.length - 1] = { ...c[c.length - 1], role: 'assistant', content }; return c; });
+    const attachSources = () =>
+      retrieveSources(q)
+        .then(({ sources }) => setMessages((m) => {
+          const c = [...m]; const last = c[c.length - 1];
+          if (last?.role === 'assistant') c[c.length - 1] = { ...last, sources };
           return c;
-        });
-      })
-      .finally(() => setBusy(false));
+        }))
+        .catch(() => { /* best-effort */ });
+    const fail = (e: unknown) => setAnswer(`⚠️ Query failed — ${e instanceof Error ? e.message : String(e)}`);
+
+    if (deep) {
+      askDeep(q).then(({ answer }) => { setAnswer(answer); return attachSources(); }).catch(fail).finally(() => setBusy(false));
+      return;
+    }
+    streamChat(convo, setAnswer).then(attachSources).catch(fail).finally(() => setBusy(false));
   }
 
   // ── voice in: record → transcribe (whisper) → ask ──
@@ -236,9 +226,21 @@ export const Ask = () => {
 
       {/* composer */}
       <div className="shrink-0 border-t border-border bg-background/95 backdrop-blur px-3 py-2.5">
+        <div className="max-w-2xl mx-auto">
+          <button
+            type="button"
+            onClick={() => setDeep((d) => !d)}
+            className={cn(
+              'mb-2 inline-flex items-center gap-1 text-[11px] font-semibold px-2.5 py-1 rounded-full transition-colors',
+              deep ? 'bg-primary/15 text-primary' : 'bg-secondary text-muted-foreground hover:text-foreground',
+            )}
+            title="Deep reasoning runs an agentic search+calc loop — slower, more thorough"
+          >
+            <Zap className={cn('w-3 h-3', deep && 'fill-current')} /> Deep reasoning · {deep ? 'on' : 'off'}
+          </button>
         <form
           onSubmit={(e) => { e.preventDefault(); send(input); }}
-          className="max-w-2xl mx-auto flex items-end gap-2"
+          className="flex items-end gap-2"
         >
           <button
             type="button"
@@ -271,6 +273,7 @@ export const Ask = () => {
             {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <ArrowUp className="w-4 h-4" />}
           </button>
         </form>
+        </div>
       </div>
     </div>
   );
