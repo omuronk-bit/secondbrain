@@ -151,6 +151,19 @@ export const setItemFeedback = async (id: string, signal: FeedbackSignal): Promi
   }
 };
 
+// Mentor "depth": foundational reading + blind spots from your knowledge graph.
+export interface GoDeeperItem { title: string; theme: string; why: string; }
+export interface BlindSpotItem { title: string; why: string; ref: string; }
+export interface GrowResponse {
+  week: string;
+  goDeeper: GoDeeperItem[];
+  blindSpots: BlindSpotItem[];
+}
+export const fetchGrow = (): Promise<GrowResponse> =>
+  apiFetch('/grow').then((r) => r.json());
+export const generateGrow = (): Promise<GrowResponse> =>
+  apiFetch('/grow/generate', { method: 'POST' }).then((r) => r.json());
+
 export interface Brief {
   date: string;
   body: string;

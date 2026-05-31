@@ -13,6 +13,7 @@ import { Library } from "./pages/Library";
 import { Analytics } from "./pages/Analytics";
 import { Notes } from "./pages/Notes";
 import { Recall } from "./pages/Recall";
+import { Grow } from "./pages/Grow";
 
 // Keyed on location → each navigation fades the new page in (soft transition).
 function Pages() {
@@ -31,6 +32,7 @@ function Pages() {
         <Route path="/ask" component={Ask} />
         <Route path="/notes" component={Notes} />
         <Route path="/recall" component={Recall} />
+        <Route path="/grow" component={Grow} />
         <Route path="/library" component={Library} />
         <Route path="/analytics" component={Analytics} />
         <Route path="/">
