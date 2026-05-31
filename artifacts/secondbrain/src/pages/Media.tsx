@@ -12,6 +12,7 @@ import { segments as allSegments, sources } from '../utils/mediaStore';
 import { RecommendationBadge } from '../components/shared/RecommendationBadge';
 import { EmptyState } from '../components/shared/EmptyState';
 import { ScoreDisplay } from '../components/shared/ScoreDisplay';
+import { FeedbackButtons } from '../components/shared/FeedbackButtons';
 import { SegmentDetail, SegmentState } from '../components/media/SegmentDetail';
 import { PlayerBar, FeedbackKey } from '../components/media/PlayerBar';
 import { cn } from '../lib/utils';
@@ -187,6 +188,8 @@ const QueueCard = ({ item, source, consumeState, segmentCount, savedSegCount, on
           >
             signals <ChevronDown className={cn('w-3 h-3 transition-transform', showSignals && 'rotate-180')} />
           </button>
+
+          <FeedbackButtons contentId={item.id} />
 
           {segmentCount > 0 && (
             <span className="flex items-center gap-1 text-[10px] font-semibold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-900/40 px-2 py-0.5 rounded-full">

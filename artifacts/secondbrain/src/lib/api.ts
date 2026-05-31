@@ -129,6 +129,28 @@ export const submitRecallAnswer = (id: number, answer: string): Promise<RecallGr
     body: JSON.stringify({ answer }),
   }).then((r) => r.json());
 
+// Explicit "more/less like this" — writes user_feedback, feeds the tuning loop.
+export type FeedbackSignal = 'more_like_this' | 'less_like_this' | 'none';
+
+let _feedbackMap: Promise<Record<string, FeedbackSignal>> | null = null;
+export const fetchFeedbackMap = (): Promise<Record<string, FeedbackSignal>> =>
+  (_feedbackMap ??= apiFetch('/feedback')
+    .then((r) => r.json())
+    .then((d) => (d.feedback ?? {}) as Record<string, FeedbackSignal>)
+    .catch(() => ({})));
+
+export const setItemFeedback = async (id: string, signal: FeedbackSignal): Promise<void> => {
+  await apiFetch(`/items/${encodeURIComponent(id)}/feedback`, {
+    method: 'POST',
+    body: JSON.stringify({ signal }),
+  });
+  if (_feedbackMap) {
+    const m = await _feedbackMap;
+    if (signal === 'none') delete m[id];
+    else m[id] = signal;
+  }
+};
+
 export interface Brief {
   date: string;
   body: string;
