@@ -71,6 +71,28 @@ export const fetchSegments = (): Promise<{ segments: Segment[] }> =>
 export const fetchSources = (): Promise<{ sources: Source[] }> =>
   apiFetch('/sources').then((r) => r.json());
 
+// Carry-overs — the per-item one_action nudges, resurfaced so they don't get forgotten.
+export interface Carryover {
+  id: string;
+  action: string;
+  title: string;
+  source: string;
+  url: string | null;
+  createdAt: string;
+}
+export interface CarryoverResponse {
+  items: Carryover[];
+  stats: { open: number; done: number; dropped: number };
+}
+export const fetchCarryovers = (limit = 5): Promise<CarryoverResponse> =>
+  apiFetch(`/carryovers?limit=${limit}`).then((r) => r.json());
+
+export const closeCarryover = (id: string, status: 'done' | 'dropped'): Promise<{ ok: boolean }> =>
+  apiFetch(`/carryovers/${encodeURIComponent(id)}/close`, {
+    method: 'POST',
+    body: JSON.stringify({ status }),
+  }).then((r) => r.json());
+
 export interface Brief {
   date: string;
   body: string;

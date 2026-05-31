@@ -15,6 +15,7 @@ import { ContentIcon } from '../components/shared/ContentIcon';
 import { getItems, saveItems } from '../utils/storage';
 import { fetchToday } from '../lib/api';
 import { BriefCard } from '../components/shared/BriefCard';
+import { CarryOvers } from '../components/shared/CarryOvers';
 import { PullToRefresh } from '../components/shared/PullToRefresh';
 import { Swipeable } from '../components/shared/Swipeable';
 import { toast } from '../hooks/use-toast';
@@ -627,6 +628,9 @@ export const Today = () => {
             </span>
           )}
         </div>
+
+        {/* ── carry-overs: did you act on these? ── */}
+        <CarryOvers />
 
         {/* ── filter tabs ── */}
         <div className="flex gap-1.5" data-testid="filter-tabs">
