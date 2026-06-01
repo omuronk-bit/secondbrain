@@ -454,7 +454,9 @@ export const Media = () => {
   const [filter, setFilter] = useState<FilterKey>('all');
   const [sort, setSort] = useState<SortKey>('relevance');
   const [sortOpen, setSortOpen] = useState(false);
-  const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
+  const [selectedItemId, setSelectedItemId] = useState<string | null>(
+    () => new URLSearchParams(window.location.search).get('item'),
+  );
   const [mediaStorage, setMediaStorage] = useState<MediaStorage>(loadMediaStorage);
   const [playingSegment, setPlayingSegment] = useState<{ seg: Segment; itemTitle: string } | null>(null);
 

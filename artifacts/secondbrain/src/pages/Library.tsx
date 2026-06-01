@@ -135,18 +135,28 @@ function ThemesSection({ items }: { items: Item[] }) {
                       <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-2">Items in this theme</p>
                       <div className="space-y-1.5">
                         {(showAll.has(def.id) ? matched : matched.slice(0, 3)).map(item => (
-                          <button
-                            key={item.id}
-                            onClick={() => openItemLink(item)}
-                            disabled={!item.originalUrl}
-                            data-testid={`theme-item-${item.id}`}
-                            className="w-full flex items-center gap-2 p-2 bg-background border border-border/40 rounded-lg text-left hover:border-primary/40 active:scale-[.99] transition-colors disabled:opacity-60"
-                          >
-                            <ContentIcon type={item.contentType} />
-                            <span className="text-xs flex-1 truncate">{item.title}</span>
-                            {item.originalUrl && <ExternalLink className="w-3 h-3 text-muted-foreground/50 shrink-0" />}
-                            <PriorityBadge level={item.confidence} />
-                          </button>
+                          <div key={item.id} className="flex items-center gap-1 bg-background border border-border/40 rounded-lg overflow-hidden">
+                            <Link
+                              href={`/media?item=${item.id}`}
+                              data-testid={`theme-item-${item.id}`}
+                              className="flex items-center gap-2 p-2 flex-1 min-w-0 hover:bg-muted/30 active:scale-[.99] transition-colors"
+                            >
+                              <ContentIcon type={item.contentType} />
+                              <span className="text-xs flex-1 truncate">{item.title}</span>
+                              <PriorityBadge level={item.confidence} />
+                            </Link>
+                            {item.originalUrl && (
+                              <button
+                                onClick={() => openItemLink(item)}
+                                title="Open source"
+                                aria-label="Open source"
+                                data-testid={`theme-item-src-${item.id}`}
+                                className="p-2 text-muted-foreground/60 hover:text-primary shrink-0"
+                              >
+                                <ExternalLink className="w-3.5 h-3.5" />
+                              </button>
+                            )}
+                          </div>
                         ))}
                         {matched.length > 3 && (
                           <button
