@@ -184,6 +184,7 @@ function ThemesSection({ items }: { items: Item[] }) {
 
 function SourcesSection({ initialSources, items }: { initialSources: Source[]; items: Item[] }) {
   const [sources, setSources] = useState(initialSources);
+  const [expandedSrc, setExpandedSrc] = useState<string | null>(null);
 
   const setPriority = (id: string, dir: 'up' | 'down') => {
     setSources(ss => ss.map(s => {
@@ -211,13 +212,25 @@ function SourcesSection({ initialSources, items }: { initialSources: Source[]; i
           <div key={src.id} className={cn('bg-card border rounded-xl p-4 space-y-3 transition-opacity', !src.active && 'opacity-60')}>
             {/* Header */}
             <div className="flex items-start justify-between gap-2">
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <h3 className="font-bold text-sm text-foreground">{src.name}</h3>
-                  <span className="text-[10px] uppercase font-bold tracking-wide bg-muted px-1.5 py-0.5 rounded text-muted-foreground">{src.type}</span>
-                  {!src.active && <span className="text-[10px] font-bold text-rose-500 uppercase">Inactive</span>}
+              <button
+                onClick={() => setExpandedSrc(e => e === src.id ? null : src.id)}
+                disabled={srcItems.length === 0}
+                data-testid={`source-header-${src.id}`}
+                className="flex-1 min-w-0 flex items-center gap-2 text-left disabled:cursor-default"
+              >
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h3 className="font-bold text-sm text-foreground">{src.name}</h3>
+                    <span className="text-[10px] uppercase font-bold tracking-wide bg-muted px-1.5 py-0.5 rounded text-muted-foreground">{src.type}</span>
+                    {!src.active && <span className="text-[10px] font-bold text-rose-500 uppercase">Inactive</span>}
+                  </div>
                 </div>
-              </div>
+                {srcItems.length > 0 && (
+                  expandedSrc === src.id
+                    ? <ChevronUp className="w-4 h-4 text-muted-foreground shrink-0" />
+                    : <ChevronDown className="w-4 h-4 text-muted-foreground shrink-0" />
+                )}
+              </button>
               <PriorityBadge level={src.priority} />
             </div>
 
@@ -249,6 +262,26 @@ function SourcesSection({ initialSources, items }: { initialSources: Source[]; i
               <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1.5">Signal Quality</p>
               <SignalBar quality={quality} />
             </div>
+
+            {/* Expanded items — tap to read/watch in-app, ↗ for the source */}
+            {expandedSrc === src.id && srcItems.length > 0 && (
+              <div className="space-y-1.5">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Items from this source</p>
+                {srcItems.slice(0, 10).map(item => (
+                  <div key={item.id} className="flex items-center gap-1 bg-background border border-border/40 rounded-lg overflow-hidden">
+                    <Link href={`/media?item=${item.id}`} data-testid={`source-item-${item.id}`} className="flex items-center gap-2 p-2 flex-1 min-w-0 hover:bg-muted/30 transition-colors">
+                      <ContentIcon type={item.contentType} />
+                      <span className="text-xs flex-1 truncate">{item.title}</span>
+                    </Link>
+                    {item.originalUrl && (
+                      <button onClick={() => openItemLink(item)} title="Open source" aria-label="Open source" data-testid={`source-item-src-${item.id}`} className="p-2 text-muted-foreground/60 hover:text-primary shrink-0">
+                        <ExternalLink className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
 
             {/* Footer row */}
             <div className="flex items-center justify-between flex-wrap gap-2 pt-1 border-t border-border/40">
