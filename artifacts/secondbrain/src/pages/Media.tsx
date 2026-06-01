@@ -1,4 +1,5 @@
 import { useState, useMemo, useCallback } from 'react';
+import { Link } from 'wouter';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Podcast, Youtube, FileText, Mail, FileIcon,
@@ -569,6 +570,11 @@ export const Media = () => {
 
       {/* ── filter + sort bar ── */}
       <div className="sticky top-[calc(3.5rem+env(safe-area-inset-top))] z-30 bg-background/90 backdrop-blur-md border-b border-border">
+        <div className="px-4 pt-2">
+          <Link href="/library" className="inline-flex items-center gap-1 text-sm font-medium text-muted-foreground hover:text-foreground" data-testid="media-back-btn">
+            <ChevronLeft className="w-4 h-4" /> Library
+          </Link>
+        </div>
         {/* filter pills */}
         <div className="flex overflow-x-auto gap-1.5 px-4 pt-3 pb-2 no-scrollbar">
           {FILTERS.map(f => (

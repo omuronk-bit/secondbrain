@@ -11,6 +11,7 @@ import {
   CheckCircle2, Circle, AlertTriangle, ExternalLink, Package,
 } from 'lucide-react';
 import { cn } from '../lib/utils';
+import { openItemLink } from '../lib/api';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Item, Source } from '../types';
 import { ContentIcon } from '../components/shared/ContentIcon';
@@ -50,6 +51,7 @@ function SignalBar({ quality }: { quality: 'high' | 'medium' | 'low' }) {
 
 function ThemesSection({ items }: { items: Item[] }) {
   const [expanded, setExpanded] = useState<string | null>(null);
+  const [showAll, setShowAll] = useState<Set<string>>(new Set());
 
   // Themes derived from the real topics on your items (not hardcoded keyword sets).
   const pretty = (t: string) => t.replace(/[_-]/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
@@ -132,15 +134,28 @@ function ThemesSection({ items }: { items: Item[] }) {
                     <div>
                       <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-2">Items in this theme</p>
                       <div className="space-y-1.5">
-                        {matched.slice(0, 3).map(item => (
-                          <div key={item.id} className="flex items-center gap-2 p-2 bg-background border border-border/40 rounded-lg">
+                        {(showAll.has(def.id) ? matched : matched.slice(0, 3)).map(item => (
+                          <button
+                            key={item.id}
+                            onClick={() => openItemLink(item)}
+                            disabled={!item.originalUrl}
+                            data-testid={`theme-item-${item.id}`}
+                            className="w-full flex items-center gap-2 p-2 bg-background border border-border/40 rounded-lg text-left hover:border-primary/40 active:scale-[.99] transition-colors disabled:opacity-60"
+                          >
                             <ContentIcon type={item.contentType} />
                             <span className="text-xs flex-1 truncate">{item.title}</span>
+                            {item.originalUrl && <ExternalLink className="w-3 h-3 text-muted-foreground/50 shrink-0" />}
                             <PriorityBadge level={item.confidence} />
-                          </div>
+                          </button>
                         ))}
                         {matched.length > 3 && (
-                          <p className="text-xs text-center text-primary/70 font-medium pt-1">+{matched.length - 3} more</p>
+                          <button
+                            onClick={() => setShowAll(s => { const n = new Set(s); if (n.has(def.id)) n.delete(def.id); else n.add(def.id); return n; })}
+                            data-testid={`theme-more-${def.id}`}
+                            className="w-full text-xs text-center text-primary font-medium pt-1 hover:underline"
+                          >
+                            {showAll.has(def.id) ? 'Show less' : `+${matched.length - 3} more`}
+                          </button>
                         )}
                       </div>
                     </div>
