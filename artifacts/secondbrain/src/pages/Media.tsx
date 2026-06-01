@@ -5,8 +5,9 @@ import {
   Podcast, Youtube, FileText, Mail, FileIcon,
   Play, Bookmark, Star, X, ChevronLeft, ChevronDown,
   Clock, Calendar, Tag, TrendingUp, Zap, BarChart2,
-  CheckCircle, Circle, Timer, RefreshCw, Filter, Sparkles
+  CheckCircle, Circle, Timer, RefreshCw, Filter, Sparkles, ExternalLink
 } from 'lucide-react';
+import { openItemLink } from '../lib/api';
 import { Item, Segment, Source } from '../types';
 import { getItems, getStorageItem, setStorageItem } from '../utils/storage';
 import { segments as allSegments, sources } from '../utils/mediaStore';
@@ -214,6 +215,17 @@ const QueueCard = ({ item, source, consumeState, segmentCount, savedSegCount, on
                 className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium bg-secondary text-secondary-foreground hover:bg-secondary/70 transition-all active:scale-95"
               >
                 {consumeState === 'in_progress' ? <><CheckCircle className="w-3.5 h-3.5 text-emerald-500" /> Done</> : <><Play className="w-3.5 h-3.5" /> Start</>}
+              </button>
+            )}
+            {item.originalUrl && (
+              <button
+                onClick={() => openItemLink(item)}
+                title="Open source"
+                aria-label="Open source"
+                data-testid={`open-src-btn-${item.id}`}
+                className="flex items-center justify-center p-1.5 rounded-lg bg-secondary text-muted-foreground hover:text-primary transition-all active:scale-95"
+              >
+                <ExternalLink className="w-3.5 h-3.5" />
               </button>
             )}
             <button

@@ -315,16 +315,25 @@ function SavedSection({ items }: { items: Item[] }) {
           {filtered.length === 0 ? (
             <EmptyState icon={<Bookmark className="w-5 h-5" />} title="No items match this filter" description="Adjust filters or save more items from your feed." />
           ) : filtered.map(item => (
-            <div key={item.id} className="flex items-start gap-3 p-3 bg-card border border-border/60 rounded-xl">
-              <div className="p-1.5 bg-muted rounded-lg shrink-0 mt-0.5"><ContentIcon type={item.contentType} /></div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold line-clamp-2">{item.title}</p>
-                <p className="text-xs text-muted-foreground mt-0.5">{item.creator} · {dateFmt(item.publishedAt)}</p>
-                {item.summary && <p className="text-xs text-muted-foreground/70 mt-1 line-clamp-2">{item.summary}</p>}
+            <div key={item.id} className="flex items-start gap-2 p-3 bg-card border border-border/60 rounded-xl">
+              <Link href={`/media?item=${item.id}`} data-testid={`saved-item-${item.id}`} className="flex items-start gap-3 flex-1 min-w-0 hover:opacity-80 transition-opacity">
+                <div className="p-1.5 bg-muted rounded-lg shrink-0 mt-0.5"><ContentIcon type={item.contentType} /></div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold line-clamp-2">{item.title}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">{item.creator} · {dateFmt(item.publishedAt)}</p>
+                  {item.summary && <p className="text-xs text-muted-foreground/70 mt-1 line-clamp-2">{item.summary}</p>}
+                </div>
+              </Link>
+              <div className="flex items-center gap-1 shrink-0">
+                {memoIds.has(item.id) && (
+                  <span className="text-[9px] font-bold text-primary bg-primary/10 px-1.5 py-0.5 rounded uppercase">Memo</span>
+                )}
+                {item.originalUrl && (
+                  <button onClick={() => openItemLink(item)} title="Open source" aria-label="Open source" data-testid={`saved-item-src-${item.id}`} className="p-1.5 text-muted-foreground/60 hover:text-primary">
+                    <ExternalLink className="w-3.5 h-3.5" />
+                  </button>
+                )}
               </div>
-              {memoIds.has(item.id) && (
-                <span className="shrink-0 text-[9px] font-bold text-primary bg-primary/10 px-1.5 py-0.5 rounded uppercase">Memo</span>
-              )}
             </div>
           ))}
         </div>

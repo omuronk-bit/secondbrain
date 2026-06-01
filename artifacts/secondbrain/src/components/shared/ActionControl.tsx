@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { ExternalLink, Check, Loader2 } from 'lucide-react';
+import { useLocation } from 'wouter';
+import { ExternalLink, Check, Loader2, Maximize2 } from 'lucide-react';
 import { Item, RecommendedAction } from '../../types';
 import { RecommendationBadge, actionLabel } from './RecommendationBadge';
 import { setItemAction, openItemLink } from '../../lib/api';
@@ -13,6 +14,7 @@ const ACTIONS: RecommendedAction[] = ['deep_consume', 'skim', 'segment', 'skip']
 // Self-contained: optimistic update, persists to the backend (survives reload)
 // and to localStorage (consistent within the session), reverts on failure.
 export function ActionControl({ item, className }: { item: Item; className?: string }) {
+  const [, setLocation] = useLocation();
   const [action, setAction] = useState<RecommendedAction>(item.recommendedAction);
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -36,6 +38,17 @@ export function ActionControl({ item, className }: { item: Item; className?: str
 
   return (
     <div className={cn('flex items-center gap-1.5 shrink-0', className)}>
+      <button
+        type="button"
+        onClick={() => setLocation(`/media?item=${item.id}`)}
+        title="Open details"
+        aria-label="Open details"
+        data-testid={`detail-${item.id}`}
+        className="p-1.5 rounded-lg bg-secondary text-muted-foreground hover:text-primary hover:bg-secondary/70 transition-colors active:scale-95"
+      >
+        <Maximize2 className="w-3.5 h-3.5" />
+      </button>
+
       {item.originalUrl && (
         <button
           type="button"
