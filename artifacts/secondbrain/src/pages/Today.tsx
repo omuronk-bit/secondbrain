@@ -494,7 +494,7 @@ export const Today = () => {
   const mustConsume = useMemo(
     () =>
       active
-        .filter(i => i.recommendedAction === 'deep_consume' && i.importanceScore >= 0.85 && i.confidence === 'high')
+        .filter(i => i.recommendedAction === 'deep_consume')
         .sort((a, b) => b.importanceScore - a.importanceScore),
     [active],
   );
