@@ -17,14 +17,14 @@ function inline(text: string, kb: string): ReactNode[] {
         <code key={key} className="px-1 py-0.5 rounded bg-muted text-[0.85em] font-mono">{tok.slice(1, -1)}</code>,
       );
     } else if (tok.startsWith('**') || tok.startsWith('__')) {
-      nodes.push(<strong key={key}>{tok.slice(2, -2)}</strong>);
+      nodes.push(<strong key={key}>{inline(tok.slice(2, -2), key)}</strong>);
     } else if (tok.startsWith('[')) {
       const t = tok.match(/\[([^\]]+)\]\(([^)]+)\)/);
       nodes.push(
         <a key={key} href={t![2]} target="_blank" rel="noopener noreferrer" className="text-primary underline">{t![1]}</a>,
       );
     } else {
-      nodes.push(<em key={key}>{tok.slice(1, -1)}</em>);
+      nodes.push(<em key={key}>{inline(tok.slice(1, -1), key)}</em>);
     }
     last = m.index + tok.length;
   }
