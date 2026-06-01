@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { Link } from 'wouter';
-import { getItems, getSources, getFeedback, getCaptures, getAskHistory } from '../utils/storage';
-import { syntheses, segments, THEME_DEFS, MOCK_DECISIONS, MOCK_FEEDBACK_LOG as MOCK_FEEDBACK } from '../data/mockData';
+import { getItems, getSources, getFeedback, getCaptures, getAskHistory, getStorageItem } from '../utils/storage';
+import { syntheses, THEME_DEFS, MOCK_DECISIONS, MOCK_FEEDBACK_LOG as MOCK_FEEDBACK } from '../data/mockData';
+import { segments } from '../utils/mediaStore';
 import { EmptyState } from '../components/shared/EmptyState';
 import {
   Hash, Database, Bookmark, Newspaper, CheckSquare, MessageSquare, Download,
@@ -322,6 +323,10 @@ function SavedSection({ items }: { items: Item[] }) {
   const FILTERS: SavedFilter[] = ['All', 'Media', 'Notes', 'Articles', 'Segments', 'Memo candidates'];
   const saved = items.filter(i => i.status === 'saved');
   const memoIds = new Set(syntheses.flatMap(s => s.savedItemIds));
+  // Real saved segments: ids the user saved in the Media detail view (same storage Media uses).
+  const media = getStorageItem<{ segments: Record<string, { saved?: boolean }> }>('secondbrain_media_state', { segments: {} });
+  const savedSegIds = new Set(Object.entries(media.segments || {}).filter(([, st]) => st?.saved).map(([id]) => id));
+  const savedSegments = segments.filter(s => savedSegIds.has(s.id));
 
   const filtered: Item[] = filter === 'All' ? saved
     : filter === 'Media' ? saved.filter(i => ['podcast', 'youtube'].includes(i.contentType))
@@ -372,20 +377,23 @@ function SavedSection({ items }: { items: Item[] }) {
         </div>
       )}
 
-      {showSegments && segments.length > 0 && (
+      {showSegments && savedSegments.length > 0 && (
         <div className="space-y-2">
           {filter === 'All' && <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground pt-2">Saved Segments</p>}
-          {segments.map(seg => (
-            <div key={seg.id} className="p-3 bg-card border border-border/60 rounded-xl space-y-2">
+          {savedSegments.map(seg => (
+            <Link key={seg.id} href={`/media?item=${seg.itemId}`} data-testid={`saved-segment-${seg.id}`} className="block p-3 bg-card border border-border/60 rounded-xl space-y-2 hover:border-primary/40 transition-colors">
               <div className="flex items-center justify-between">
                 <p className="text-sm font-semibold">{seg.title}</p>
                 <span className="text-[10px] font-mono text-muted-foreground">{seg.startTime}–{seg.endTime}</span>
               </div>
               <p className="text-xs text-muted-foreground italic line-clamp-2">"{seg.transcriptExcerpt}"</p>
               <p className="text-xs text-foreground/80">{seg.segmentSummary}</p>
-            </div>
+            </Link>
           ))}
         </div>
+      )}
+      {filter === 'Segments' && savedSegments.length === 0 && (
+        <EmptyState icon={<Bookmark className="w-5 h-5" />} title="No saved segments yet" description="Save standout segments from a podcast or video and they'll show up here." />
       )}
     </div>
   );

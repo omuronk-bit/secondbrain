@@ -23,7 +23,8 @@ import { TuningCard } from '../components/shared/TuningCard';
 import { PullToRefresh } from '../components/shared/PullToRefresh';
 import { Swipeable } from '../components/shared/Swipeable';
 import { toast } from '../hooks/use-toast';
-import { segments, sources, syntheses, WORK_TOPICS, PERSONAL_TOPICS } from '../data/mockData';
+import { sources, syntheses, WORK_TOPICS, PERSONAL_TOPICS } from '../data/mockData';
+import { segments } from '../utils/mediaStore';
 import { Item, Source } from '../types';
 import { cn } from '../lib/utils';
 
@@ -525,7 +526,8 @@ export const Today = () => {
           if (!matchesFilter(item, filter)) return false;
           return s.recommendedAction === 'deep_consume' || s.recommendedAction === 'segment';
         })
-        .sort((a, b) => b.relevanceScore - a.relevanceScore),
+        .sort((a, b) => b.relevanceScore - a.relevanceScore)
+        .slice(0, 8),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [items, filter, uiState],
   );
@@ -751,7 +753,7 @@ export const Today = () => {
                         key={seg.id}
                         segment={seg}
                         itemTitle={item?.title}
-                        onPlay={() => {}}
+                        onPlay={() => navigate(`/media?item=${seg.itemId}`)}
                       />
                     );
                   })}
