@@ -5,9 +5,9 @@ import {
   Podcast, Youtube, FileText, Mail, FileIcon,
   Play, Bookmark, Star, X, ChevronLeft, ChevronDown,
   Clock, Calendar, Tag, TrendingUp, Zap, BarChart2,
-  CheckCircle, Circle, Timer, RefreshCw, Filter, Sparkles, ExternalLink
+  CheckCircle, Circle, Timer, RefreshCw, Filter, Sparkles, ExternalLink, Search
 } from 'lucide-react';
-import { openItemLink, openSegmentSource } from '../lib/api';
+import { openItemLink, openSegmentSource, openSpotifySearch } from '../lib/api';
 import { Item, Segment, Source } from '../types';
 import { getItems, getStorageItem, setStorageItem } from '../utils/storage';
 import { segments as allSegments, sources } from '../utils/mediaStore';
@@ -285,6 +285,15 @@ const DetailPanel = ({
             <ChevronLeft className="w-4 h-4" /> Back to queue
           </button>
           <div className="flex items-center gap-2.5 shrink-0">
+            {item.contentType === 'podcast' && (
+              <button
+                onClick={() => openSpotifySearch([item.title, source?.name].filter(Boolean).join(' '))}
+                data-testid={`detail-spotify-${item.id}`}
+                className="inline-flex items-center gap-1.5 text-sm font-semibold text-[#1DB954] hover:underline active:scale-95 transition-transform"
+              >
+                <Search className="w-3.5 h-3.5" /> Find in Spotify
+              </button>
+            )}
             {item.originalUrl && (
               <button
                 onClick={() => openItemLink(item)}

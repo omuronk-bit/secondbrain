@@ -292,6 +292,14 @@ export const openItemLink = (item: Item): void => {
   if (item.originalUrl) openExternal(item.originalUrl);
 };
 
+/** Open a Spotify search for a query — drops you onto the episode/show in the
+ *  Spotify app. Podcasts come in via RSS, so there's no direct Spotify link to
+ *  use; a title search is the closest we can get. */
+export const openSpotifySearch = (query: string): void => {
+  const q = (query || '').trim();
+  if (q) openExternal(`https://open.spotify.com/search/${encodeURIComponent(q)}`);
+};
+
 /** Build a deep link to the original source at a segment's start time.
  *  YouTube supports ?t=<sec>s / &t=<sec>s; other platforms vary, so we fall back
  *  to the plain source URL. startTime is "HH:MM:SS" or "MM:SS". */
