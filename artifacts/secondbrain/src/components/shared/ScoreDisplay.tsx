@@ -7,23 +7,15 @@ interface Props {
   className?: string;
 }
 
+// The three sub-scores are all derived from one overall score, so showing
+// "R / N / I" as three identical cryptic numbers was just noise. Surface a
+// single, human value instead.
 export const ScoreDisplay = ({ relevance, novelty, importance, className }: Props) => {
+  const pct = Math.round(Math.max(relevance, novelty, importance) * 100);
   return (
-    <div className={cn("flex items-center gap-2 text-xs font-mono text-muted-foreground", className)}>
-      <span className="flex items-center gap-1">
-        <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
-        R: {relevance.toFixed(2)}
-      </span>
-      <span className="opacity-50">|</span>
-      <span className="flex items-center gap-1">
-        <span className="w-1.5 h-1.5 rounded-full bg-purple-500"></span>
-        N: {novelty.toFixed(2)}
-      </span>
-      <span className="opacity-50">|</span>
-      <span className="flex items-center gap-1">
-        <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
-        I: {importance.toFixed(2)}
-      </span>
+    <div className={cn("flex items-center gap-1.5 text-xs text-muted-foreground", className)}>
+      <span className="w-1.5 h-1.5 rounded-full bg-primary/60"></span>
+      <span className="font-medium">{pct}% relevant</span>
     </div>
   );
 };

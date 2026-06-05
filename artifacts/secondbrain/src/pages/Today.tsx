@@ -203,8 +203,7 @@ const SegmentRow = ({ segment, itemTitle, onPlay }: SegmentRowProps) => (
         Play segment
       </button>
       <div className="ml-auto flex items-center gap-1 text-xs text-muted-foreground">
-        <span className="font-medium">R</span>
-        <span className="font-mono">{segment.relevanceScore.toFixed(2)}</span>
+        <span className="font-medium">{Math.round(segment.relevanceScore * 100)}% relevant</span>
       </div>
     </div>
   </div>
