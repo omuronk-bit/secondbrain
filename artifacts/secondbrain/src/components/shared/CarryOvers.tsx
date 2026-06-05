@@ -60,9 +60,10 @@ export function CarryOvers() {
                   href={c.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-muted-foreground hover:text-primary transition-colors p-0.5"
-                  aria-label="Open source"
+                  className="inline-flex items-center gap-1 text-[11px] font-medium text-muted-foreground hover:text-primary transition-colors p-0.5"
+                  aria-label={c.at ? `Open source at ${c.at}` : 'Open source'}
                 >
+                  {c.at && <span className="font-mono text-primary">▸ {c.at}</span>}
                   <ExternalLink className="w-3.5 h-3.5" />
                 </a>
               )}

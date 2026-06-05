@@ -78,6 +78,7 @@ export interface Carryover {
   title: string;
   source: string;
   url: string | null;
+  at?: string | null;   // "H:MM:SS" — the relevant moment in the source, when known
   createdAt: string;
 }
 export interface CarryoverResponse {
