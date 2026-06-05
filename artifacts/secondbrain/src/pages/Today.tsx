@@ -5,7 +5,7 @@ import {
   ChevronRight, Activity, AlertCircle, CheckCircle2, Sparkles,
   Play, BookOpen, LayoutList, LayoutGrid,
   Briefcase, User, Globe, Clock, TrendingUp,
-  Bookmark, Star, X, ChevronUp,
+  Bookmark, Star, X, ChevronUp, ChevronDown, ExternalLink,
 } from 'lucide-react';
 import { RecommendationBadge } from '../components/shared/RecommendationBadge';
 import { ActionControl } from '../components/shared/ActionControl';
@@ -13,7 +13,7 @@ import { ScoreDisplay } from '../components/shared/ScoreDisplay';
 import { EmptyState } from '../components/shared/EmptyState';
 import { ContentIcon } from '../components/shared/ContentIcon';
 import { getItems, saveItems } from '../utils/storage';
-import { fetchToday } from '../lib/api';
+import { fetchToday, openItemLink } from '../lib/api';
 import { BriefCard } from '../components/shared/BriefCard';
 import { CarryOvers } from '../components/shared/CarryOvers';
 import { RecallCard } from '../components/shared/RecallCard';
@@ -407,6 +407,7 @@ export const Today = () => {
   const [askInput, setAskInput] = useState('');
   const [items, setItems] = useState<Item[]>(getItems());
   const [filter, setFilter] = useState<FilterMode>('all');
+  const [mustListOpen, setMustListOpen] = useState(false);
 
   // Hand a question to the Ask page (which auto-runs it on mount).
   const askQuestion = (q: string) => {
@@ -620,19 +621,60 @@ export const Today = () => {
         {/* ── your brief ── */}
         <BriefCard />
 
-        {/* ── at a glance ── */}
-        <div className="rounded-2xl border bg-card shadow-sm px-4 py-3.5 flex items-center gap-3.5" data-testid="summary-strip">
-          <div className="w-12 h-12 rounded-2xl bg-primary/10 grid place-items-center shrink-0">
-            <span className="font-serif font-bold text-xl text-primary leading-none">{totalActive}</span>
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-bold text-foreground leading-snug">{summaryHead}</p>
-            <p className="text-xs text-muted-foreground mt-0.5">{summarySub}</p>
-          </div>
-          {mustConsume.length > 0 && (
-            <span className="shrink-0 text-[10px] font-bold uppercase tracking-wide px-2 py-1 rounded-full bg-amber-soft text-amber">
-              {mustConsume.length} hot
-            </span>
+        {/* ── at a glance (tap to reveal the must-read items) ── */}
+        <div className="rounded-2xl border bg-card shadow-sm overflow-hidden" data-testid="summary-strip">
+          <button
+            type="button"
+            onClick={() => mustConsume.length > 0 && setMustListOpen(o => !o)}
+            disabled={mustConsume.length === 0}
+            data-testid="summary-must-toggle"
+            className={cn('w-full px-4 py-3.5 flex items-center gap-3.5 text-left transition-colors',
+              mustConsume.length > 0 ? 'hover:bg-muted/20' : 'cursor-default')}
+          >
+            <div className="w-12 h-12 rounded-2xl bg-primary/10 grid place-items-center shrink-0">
+              <span className="font-serif font-bold text-xl text-primary leading-none">{totalActive}</span>
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-bold text-foreground leading-snug">{summaryHead}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">{summarySub}</p>
+            </div>
+            {mustConsume.length > 0 && (
+              <>
+                <span className="shrink-0 text-[10px] font-bold uppercase tracking-wide px-2 py-1 rounded-full bg-amber-soft text-amber">
+                  {mustConsume.length} hot
+                </span>
+                {mustListOpen
+                  ? <ChevronUp className="w-4 h-4 text-muted-foreground shrink-0" />
+                  : <ChevronDown className="w-4 h-4 text-muted-foreground shrink-0" />}
+              </>
+            )}
+          </button>
+
+          {mustConsume.length > 0 && mustListOpen && (
+            <div className="border-t border-border/50 p-3 space-y-1.5 bg-muted/10">
+              {mustConsume.map(item => (
+                <div key={item.id} className="flex items-center gap-1 bg-background border border-border/40 rounded-lg overflow-hidden">
+                  <button
+                    onClick={() => navigate(`/media?item=${item.id}`)}
+                    data-testid={`must-flagged-item-${item.id}`}
+                    className="flex items-center gap-2 p-2 flex-1 min-w-0 text-left hover:bg-muted/30 transition-colors"
+                  >
+                    <ContentIcon type={item.contentType} />
+                    <span className="text-xs flex-1 truncate">{item.title}</span>
+                  </button>
+                  {item.originalUrl && (
+                    <button
+                      onClick={() => openItemLink(item)}
+                      title="Open source" aria-label="Open source"
+                      data-testid={`must-flagged-src-${item.id}`}
+                      className="p-2 text-muted-foreground/60 hover:text-primary shrink-0"
+                    >
+                      <ExternalLink className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
           )}
         </div>
 
