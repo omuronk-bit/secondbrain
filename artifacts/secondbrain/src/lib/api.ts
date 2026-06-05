@@ -274,9 +274,22 @@ export const setItemAction = (
     body: JSON.stringify({ action }),
   }).then((r) => r.json());
 
+/** Open an external URL via a real anchor click. iOS home-screen PWAs routinely
+ *  block window.open() but honor anchor navigations (the same path the brief's
+ *  links use), so this is the reliable way to reach YouTube/articles/audio. */
+const openExternal = (url: string): void => {
+  const a = document.createElement('a');
+  a.href = url;
+  a.target = '_blank';
+  a.rel = 'noopener noreferrer';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+};
+
 /** Open an item's source (article/video/podcast/Gmail) in a new tab. */
 export const openItemLink = (item: Item): void => {
-  if (item.originalUrl) window.open(item.originalUrl, '_blank', 'noopener,noreferrer');
+  if (item.originalUrl) openExternal(item.originalUrl);
 };
 
 /** Build a deep link to the original source at a segment's start time.
@@ -296,7 +309,7 @@ export const segmentSourceUrl = (originalUrl: string, startTime: string): string
 /** Open the original source at a segment's timestamp. Returns false if no URL. */
 export const openSegmentSource = (originalUrl: string | undefined, startTime: string): boolean => {
   if (!originalUrl) return false;
-  window.open(segmentSourceUrl(originalUrl, startTime), '_blank', 'noopener,noreferrer');
+  openExternal(segmentSourceUrl(originalUrl, startTime));
   return true;
 };
 

@@ -164,7 +164,7 @@ const QueueCard = ({ item, source, consumeState, segmentCount, savedSegCount, on
             </div>
             <h3 className="font-bold text-[15px] leading-snug text-foreground">{item.title}</h3>
           </div>
-          <RecommendationBadge action={item.recommendedAction} confidence={item.confidence} className="shrink-0 mt-0.5" />
+          <RecommendationBadge action={item.recommendedAction} confidence={item.confidence} contentType={item.contentType} className="shrink-0 mt-0.5" />
         </div>
 
         {/* summary */}
@@ -318,7 +318,7 @@ const DetailPanel = ({
               </div>
               <h2 className="text-xl font-bold leading-snug text-foreground">{item.title}</h2>
             </div>
-            <RecommendationBadge action={item.recommendedAction} confidence={item.confidence} className="shrink-0 mt-1" />
+            <RecommendationBadge action={item.recommendedAction} confidence={item.confidence} contentType={item.contentType} className="shrink-0 mt-1" />
           </div>
         </div>
 
@@ -439,7 +439,7 @@ const DetailPanel = ({
                       <p className="font-semibold text-sm text-foreground line-clamp-1">{rel.title}</p>
                       <p className="text-xs text-muted-foreground">{relSrc?.name ?? rel.creator}</p>
                     </div>
-                    <RecommendationBadge action={rel.recommendedAction} className="shrink-0" />
+                    <RecommendationBadge action={rel.recommendedAction} contentType={rel.contentType} className="shrink-0" />
                   </div>
                 );
               })}
