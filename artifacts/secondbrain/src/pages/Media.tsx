@@ -276,7 +276,7 @@ const DetailPanel = ({
     >
       <div className="max-w-2xl mx-auto px-4 pt-[calc(0.75rem+env(safe-area-inset-top))] pb-[calc(2rem+env(safe-area-inset-bottom))] space-y-5">
         {/* back + actions */}
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-2">
           <button
             onClick={onBack}
             data-testid="detail-back-btn"
@@ -284,7 +284,18 @@ const DetailPanel = ({
           >
             <ChevronLeft className="w-4 h-4" /> Back to queue
           </button>
-          <ConsumeBadge state={consumeState} />
+          <div className="flex items-center gap-2.5 shrink-0">
+            {item.originalUrl && (
+              <button
+                onClick={() => openItemLink(item)}
+                data-testid={`detail-open-src-${item.id}`}
+                className="inline-flex items-center gap-1.5 text-sm font-semibold text-primary hover:underline active:scale-95 transition-transform"
+              >
+                Open original <ExternalLink className="w-3.5 h-3.5" />
+              </button>
+            )}
+            <ConsumeBadge state={consumeState} />
+          </div>
         </div>
 
         {/* title block */}
