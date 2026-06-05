@@ -7,7 +7,7 @@ import {
   Clock, Calendar, Tag, TrendingUp, Zap, BarChart2,
   CheckCircle, Circle, Timer, RefreshCw, Filter, Sparkles, ExternalLink
 } from 'lucide-react';
-import { openItemLink } from '../lib/api';
+import { openItemLink, openSegmentSource } from '../lib/api';
 import { Item, Segment, Source } from '../types';
 import { getItems, getStorageItem, setStorageItem } from '../utils/storage';
 import { segments as allSegments, sources } from '../utils/mediaStore';
@@ -532,7 +532,11 @@ export const Media = () => {
 
   const handlePlaySegment = useCallback((seg: Segment) => {
     const item = allItems.find(i => i.id === seg.itemId);
-    setPlayingSegment({ seg, itemTitle: item?.title ?? '' });
+    // Open the ORIGINAL source at the segment's timestamp (YouTube → &t=<sec>s).
+    // Fall back to the in-app player bar only when there's no source URL.
+    if (!openSegmentSource(item?.originalUrl, seg.startTime)) {
+      setPlayingSegment({ seg, itemTitle: item?.title ?? '' });
+    }
     if (getItemState(seg.itemId) === 'not_started') {
       setConsumeState(seg.itemId, 'in_progress');
     }

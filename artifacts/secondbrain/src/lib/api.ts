@@ -279,6 +279,27 @@ export const openItemLink = (item: Item): void => {
   if (item.originalUrl) window.open(item.originalUrl, '_blank', 'noopener,noreferrer');
 };
 
+/** Build a deep link to the original source at a segment's start time.
+ *  YouTube supports ?t=<sec>s / &t=<sec>s; other platforms vary, so we fall back
+ *  to the plain source URL. startTime is "HH:MM:SS" or "MM:SS". */
+export const segmentSourceUrl = (originalUrl: string, startTime: string): string => {
+  if (!originalUrl) return originalUrl;
+  const p = (startTime || '').split(':').map((n) => parseInt(n, 10) || 0);
+  const sec = p.length === 3 ? p[0] * 3600 + p[1] * 60 + p[2] : p.length === 2 ? p[0] * 60 + p[1] : p[0];
+  if (!sec) return originalUrl;
+  if (/youtube\.com|youtu\.be/i.test(originalUrl)) {
+    return originalUrl + (originalUrl.includes('?') ? '&' : '?') + `t=${sec}s`;
+  }
+  return originalUrl;
+};
+
+/** Open the original source at a segment's timestamp. Returns false if no URL. */
+export const openSegmentSource = (originalUrl: string | undefined, startTime: string): boolean => {
+  if (!originalUrl) return false;
+  window.open(segmentSourceUrl(originalUrl, startTime), '_blank', 'noopener,noreferrer');
+  return true;
+};
+
 export interface UploadResult {
   ok: boolean;
   path: string;

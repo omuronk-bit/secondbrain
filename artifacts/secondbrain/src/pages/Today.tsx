@@ -13,7 +13,7 @@ import { ScoreDisplay } from '../components/shared/ScoreDisplay';
 import { EmptyState } from '../components/shared/EmptyState';
 import { ContentIcon } from '../components/shared/ContentIcon';
 import { getItems, saveItems } from '../utils/storage';
-import { fetchToday, openItemLink } from '../lib/api';
+import { fetchToday, openItemLink, openSegmentSource } from '../lib/api';
 import { BriefCard } from '../components/shared/BriefCard';
 import { CarryOvers } from '../components/shared/CarryOvers';
 import { RecallCard } from '../components/shared/RecallCard';
@@ -795,7 +795,7 @@ export const Today = () => {
                         key={seg.id}
                         segment={seg}
                         itemTitle={item?.title}
-                        onPlay={() => navigate(`/media?item=${seg.itemId}`)}
+                        onPlay={() => { if (!openSegmentSource(item?.originalUrl, seg.startTime)) navigate(`/media?item=${seg.itemId}`); }}
                       />
                     );
                   })}
