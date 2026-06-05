@@ -12,7 +12,8 @@ import {
   CheckCircle2, Circle, AlertTriangle, ExternalLink, Package,
 } from 'lucide-react';
 import { cn } from '../lib/utils';
-import { openItemLink } from '../lib/api';
+import { openItemLink, setSourceActive } from '../lib/api';
+import { toast } from '../hooks/use-toast';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Item, Source } from '../types';
 import { ContentIcon } from '../components/shared/ContentIcon';
@@ -197,7 +198,18 @@ function SourcesSection({ initialSources, items }: { initialSources: Source[]; i
     }));
   };
 
-  const toggleActive = (id: string) => setSources(ss => ss.map(s => s.id === id ? { ...s, active: !s.active } : s));
+  const toggleActive = (id: string) => {
+    const src = sources.find(s => s.id === id);
+    if (!src) return;
+    const next = !src.active;
+    setSources(ss => ss.map(s => s.id === id ? { ...s, active: next } : s)); // optimistic
+    setSourceActive(id, next)
+      .then(() => toast({ title: next ? 'Source resumed' : 'Source paused', description: src.name }))
+      .catch(() => {
+        setSources(ss => ss.map(s => s.id === id ? { ...s, active: !next } : s)); // revert
+        toast({ title: 'Could not update source', description: 'Try again.' });
+      });
+  };
 
   return (
     <div className="space-y-3">

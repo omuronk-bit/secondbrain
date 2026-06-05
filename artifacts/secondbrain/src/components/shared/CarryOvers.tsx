@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { CheckCircle2, X, ExternalLink, ListTodo } from 'lucide-react';
-import { fetchCarryovers, closeCarryover, Carryover } from '../../lib/api';
+import { fetchCarryovers, closeCarryover, setSourceActive, Carryover } from '../../lib/api';
 import { toast } from '../../hooks/use-toast';
 
 // "Did you act on these?" — resurfaces the oldest open one_action nudges and
@@ -27,6 +27,22 @@ export function CarryOvers() {
       load(); // replenish with the next-oldest carry-over
     } catch {
       toast({ title: 'Could not update', description: 'Try again.' });
+      load();
+    }
+  }
+
+  // Follow a 'remove source' recommendation: pause the source, then close the nudge.
+  async function pauseSourceAct(c: Carryover) {
+    if (!c.pauseSource) return;
+    setItems((xs) => xs.filter((x) => x.id !== c.id)); // optimistic
+    setStats((s) => ({ ...s, open: Math.max(0, s.open - 1), done: s.done + 1 }));
+    try {
+      await setSourceActive(c.pauseSource, false);
+      await closeCarryover(c.id, 'done');
+      toast({ title: 'Source paused ✓', description: c.pauseSource });
+      load();
+    } catch {
+      toast({ title: 'Could not pause source', description: 'Try again.' });
       load();
     }
   }
@@ -66,6 +82,16 @@ export function CarryOvers() {
                   {c.at && <span className="font-mono text-primary">▸ {c.at}</span>}
                   <ExternalLink className="w-3.5 h-3.5" />
                 </a>
+              )}
+              {c.pauseSource && (
+                <button
+                  onClick={() => pauseSourceAct(c)}
+                  data-testid={`pause-src-${c.id}`}
+                  title={`Pause "${c.pauseSource}" so it stops appearing`}
+                  className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-rose-500/15 text-rose-600 dark:text-rose-400 text-[11px] font-bold active:scale-95 transition-transform"
+                >
+                  <X className="w-3.5 h-3.5" /> Pause source
+                </button>
               )}
               <button
                 onClick={() => close(c, 'done')}

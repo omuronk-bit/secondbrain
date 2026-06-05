@@ -78,7 +78,8 @@ export interface Carryover {
   title: string;
   source: string;
   url: string | null;
-  at?: string | null;   // "H:MM:SS" — the relevant moment in the source, when known
+  at?: string | null;          // "H:MM:SS" — the relevant moment in the source, when known
+  pauseSource?: string | null; // source_id a remove/demote action names → offer a one-tap pause
   createdAt: string;
 }
 export interface CarryoverResponse {
@@ -92,6 +93,13 @@ export const closeCarryover = (id: string, status: 'done' | 'dropped'): Promise<
   apiFetch(`/carryovers/${encodeURIComponent(id)}/close`, {
     method: 'POST',
     body: JSON.stringify({ status }),
+  }).then((r) => r.json());
+
+/** Pause (active:false) / resume (active:true) a source — persists to sources.yaml. */
+export const setSourceActive = (sourceId: string, active: boolean): Promise<{ ok: boolean; active: boolean }> =>
+  apiFetch(`/sources/${encodeURIComponent(sourceId)}/active`, {
+    method: 'POST',
+    body: JSON.stringify({ active }),
   }).then((r) => r.json());
 
 // Weekly recall quiz — active recall from your own vault claims.
