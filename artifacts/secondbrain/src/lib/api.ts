@@ -283,6 +283,17 @@ export const setItemAction = (
     body: JSON.stringify({ action }),
   }).then((r) => r.json());
 
+/** Mark an item consumed (read/watched) server-side, or undo. Consumed items
+ *  drop out of /api/today so they never resurface, and feed the recommender. */
+export const setItemConsumed = (
+  id: string,
+  consumed: boolean,
+): Promise<{ ok: boolean; consumed: boolean }> =>
+  apiFetch(`/items/${encodeURIComponent(id)}/consume`, {
+    method: 'POST',
+    body: JSON.stringify({ consumed }),
+  }).then((r) => r.json());
+
 /** Open an external URL via a real anchor click. iOS home-screen PWAs routinely
  *  block window.open() but honor anchor navigations (the same path the brief's
  *  links use), so this is the reliable way to reach YouTube/articles/audio. */

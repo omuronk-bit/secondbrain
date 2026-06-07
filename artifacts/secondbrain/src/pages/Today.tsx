@@ -13,7 +13,7 @@ import { ScoreDisplay } from '../components/shared/ScoreDisplay';
 import { EmptyState } from '../components/shared/EmptyState';
 import { ContentIcon } from '../components/shared/ContentIcon';
 import { getItems, saveItems } from '../utils/storage';
-import { fetchToday, openItemLink, openSegmentSource } from '../lib/api';
+import { fetchToday, openItemLink, openSegmentSource, setItemConsumed } from '../lib/api';
 import { BriefCard } from '../components/shared/BriefCard';
 import { CarryOvers } from '../components/shared/CarryOvers';
 import { RecallCard } from '../components/shared/RecallCard';
@@ -475,7 +475,12 @@ export const Today = () => {
     });
     if (action === 'save') toast({ title: getState(id).saved ? 'Removed from saved' : 'Saved to Library' });
     if (action === 'dismiss') toast({ title: 'Dismissed' });
-    if (action === 'consume') toast({ title: getState(id).consumed ? 'Moved back to must-consume' : 'Marked consumed' });
+    if (action === 'consume') {
+      const nowConsumed = !getState(id).consumed;
+      toast({ title: nowConsumed ? 'Marked consumed' : 'Moved back to must-consume' });
+      // Persist server-side: consumed items drop out of /api/today and feed tuning.
+      setItemConsumed(id, nowConsumed).catch(() => toast({ title: "Couldn't sync — will retry on next mark", variant: 'destructive' }));
+    }
 
     const updated = items.map(i => {
       if (i.id !== id) return i;
