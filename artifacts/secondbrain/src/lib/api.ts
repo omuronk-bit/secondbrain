@@ -57,6 +57,10 @@ export interface TodayResponse {
 export const fetchToday = (): Promise<TodayResponse> =>
   apiFetch('/today').then((r) => r.json());
 
+/** Persistent list of items you've marked consumed (most recent first). */
+export const fetchConsumed = (limit = 50): Promise<{ items: Item[] }> =>
+  apiFetch(`/consumed?limit=${limit}`).then((r) => r.json());
+
 export interface StatsResponse extends TodayStats {
   totalItems?: number;
   byType?: Record<string, number>;

@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useLocation } from 'wouter';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -13,7 +13,7 @@ import { ScoreDisplay } from '../components/shared/ScoreDisplay';
 import { EmptyState } from '../components/shared/EmptyState';
 import { ContentIcon } from '../components/shared/ContentIcon';
 import { getItems, saveItems } from '../utils/storage';
-import { fetchToday, openItemLink, openSegmentSource, setItemConsumed } from '../lib/api';
+import { fetchToday, fetchConsumed, openItemLink, openSegmentSource, setItemConsumed } from '../lib/api';
 import { BriefCard } from '../components/shared/BriefCard';
 import { CarryOvers } from '../components/shared/CarryOvers';
 import { RecallCard } from '../components/shared/RecallCard';
@@ -417,6 +417,11 @@ export const Today = () => {
   const [items, setItems] = useState<Item[]>(getItems());
   const [filter, setFilter] = useState<FilterMode>('all');
   const [mustListOpen, setMustListOpen] = useState(false);
+  // Persistent "Consumed" folder — backed by /api/consumed so it survives refresh.
+  const [consumedServer, setConsumedServer] = useState<Item[]>([]);
+  useEffect(() => {
+    fetchConsumed().then(r => setConsumedServer(r.items)).catch(() => {/* keep empty */});
+  }, []);
 
   // Hand a question to the Ask page (which auto-runs it on mount).
   const askQuestion = (q: string) => {
@@ -458,6 +463,7 @@ export const Today = () => {
       const data = await fetchToday();
       saveItems(data.items);
       setItems(data.items);
+      fetchConsumed().then(r => setConsumedServer(r.items)).catch(() => {/* keep */});
     } catch {
       /* keep current items on failure */
     }
@@ -477,8 +483,12 @@ export const Today = () => {
     if (action === 'dismiss') toast({ title: 'Dismissed' });
     if (action === 'consume') {
       const nowConsumed = !getState(id).consumed;
+      const it = items.find(i => i.id === id);
       toast({ title: nowConsumed ? 'Marked consumed' : 'Moved back to must-consume' });
-      // Persist server-side: consumed items drop out of /api/today and feed tuning.
+      // Keep the persistent Consumed folder in sync optimistically...
+      if (nowConsumed && it) setConsumedServer(prev => prev.some(p => p.id === id) ? prev : [{ ...it, status: 'consumed' as Item['status'] }, ...prev]);
+      else setConsumedServer(prev => prev.filter(p => p.id !== id));
+      // ...and persist server-side (drops out of /api/today, feeds tuning).
       setItemConsumed(id, nowConsumed).catch(() => toast({ title: "Couldn't sync — will retry on next mark", variant: 'destructive' }));
     }
 
@@ -500,6 +510,26 @@ export const Today = () => {
     });
   };
 
+  // Undo from the persistent Consumed folder. Works whether the item is still in
+  // the local queue (consumed this session) or only on the server (a past day).
+  const unconsumeItem = (id: string) => {
+    const it = consumedServer.find(p => p.id === id);
+    setConsumedServer(prev => prev.filter(p => p.id !== id));
+    setUiState(prev => {
+      const cur = prev[id] ?? { saved: false, memo: false, dismissed: false, consumed: false, summaryExpanded: false };
+      return { ...prev, [id]: { ...cur, consumed: false } };
+    });
+    setItems(prev => {
+      const updated = prev.some(i => i.id === id)
+        ? prev.map(i => (i.id === id ? { ...i, status: 'new' as Item['status'] } : i))
+        : (it ? [{ ...it, status: 'new' as Item['status'] }, ...prev] : prev);
+      saveItems(updated);
+      return updated;
+    });
+    toast({ title: 'Moved back to must-consume' });
+    setItemConsumed(id, false).catch(() => toast({ title: "Couldn't sync", variant: 'destructive' }));
+  };
+
   const toggleSection = (key: string) =>
     setExpandedSections(prev => ({ ...prev, [key]: !prev[key] }));
 
@@ -512,12 +542,11 @@ export const Today = () => {
     [items, filter, uiState],
   );
 
-  // Consumed "folder": items you've marked done — pulled out of the active queue,
-  // kept here so they're reviewable and the must-consume count reflects only what's left.
+  // Persistent Consumed folder — server-backed (/api/consumed), so it survives
+  // refresh/reopen. Filtered by the active Work/Personal tab.
   const consumedItems = useMemo(
-    () => items.filter(i => getState(i.id).consumed && matchesFilter(i, filter)),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [items, filter, uiState],
+    () => consumedServer.filter(i => matchesFilter(i, filter)),
+    [consumedServer, filter],
   );
 
   const mustConsume = useMemo(
@@ -960,7 +989,7 @@ export const Today = () => {
                         </button>
                       )}
                       <button
-                        onClick={() => handleAction('consume', item.id)}
+                        onClick={() => unconsumeItem(item.id)}
                         title="Move back to must-consume" aria-label="Undo consumed"
                         data-testid={`consumed-undo-${item.id}`}
                         className="p-1.5 text-muted-foreground/60 hover:text-foreground shrink-0"
