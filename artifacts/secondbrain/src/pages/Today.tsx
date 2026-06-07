@@ -5,7 +5,7 @@ import {
   ChevronRight, Activity, AlertCircle, CheckCircle2, Sparkles,
   Play, BookOpen, LayoutList, LayoutGrid,
   Briefcase, User, Globe, Clock, TrendingUp,
-  Bookmark, Star, X, ChevronUp, ChevronDown, ExternalLink,
+  Bookmark, Star, X, ChevronUp, ChevronDown, ExternalLink, RotateCcw,
 } from 'lucide-react';
 import { RecommendationBadge } from '../components/shared/RecommendationBadge';
 import { ActionControl } from '../components/shared/ActionControl';
@@ -60,6 +60,7 @@ interface CardState {
   saved: boolean;
   memo: boolean;
   dismissed: boolean;
+  consumed: boolean;
   summaryExpanded: boolean;
 }
 
@@ -68,7 +69,7 @@ interface MustConsumeCardProps {
   source?: Source;
   compact: boolean;
   state: CardState;
-  onAction: (action: 'save' | 'dismiss' | 'memo', id: string) => void;
+  onAction: (action: 'save' | 'dismiss' | 'memo' | 'consume', id: string) => void;
   onToggleSummary: (id: string) => void;
 }
 
@@ -122,7 +123,15 @@ const MustConsumeCard = ({ item, source, compact, state, onAction, onToggleSumma
       )}
 
       {/* actions */}
-      <div className="flex items-center gap-2 pt-1 border-t border-border/40">
+      <div className="flex items-center gap-2 flex-wrap pt-1 border-t border-border/40">
+        <button
+          onClick={() => onAction('consume', item.id)}
+          data-testid={`consume-btn-${item.id}`}
+          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-primary text-primary-foreground hover:bg-primary/90 transition-all active:scale-95"
+        >
+          <CheckCircle2 className="w-3.5 h-3.5" />
+          Mark consumed
+        </button>
         <button
           onClick={() => onAction('save', item.id)}
           data-testid={`save-btn-${item.id}`}
@@ -398,6 +407,7 @@ interface ItemUIState {
   saved: boolean;
   memo: boolean;
   dismissed: boolean;
+  consumed: boolean;
   summaryExpanded: boolean;
 }
 
@@ -423,6 +433,7 @@ export const Today = () => {
     skip: false,
     memo: true,
     loops: true,
+    consumed: false,
   });
   const [uiState, setUiState] = useState<Record<string, ItemUIState>>(() => {
     const init: Record<string, ItemUIState> = {};
@@ -431,6 +442,7 @@ export const Today = () => {
         saved: item.status === 'saved',
         memo: false,
         dismissed: item.status === 'dismissed',
+        consumed: item.status === 'consumed',
         summaryExpanded: false,
       };
     });
@@ -438,7 +450,7 @@ export const Today = () => {
   });
 
   const getState = (id: string): ItemUIState =>
-    uiState[id] ?? { saved: false, memo: false, dismissed: false, summaryExpanded: false };
+    uiState[id] ?? { saved: false, memo: false, dismissed: false, consumed: false, summaryExpanded: false };
 
   // Pull-to-refresh: re-pull today's items from the backend.
   const refresh = async () => {
@@ -451,22 +463,25 @@ export const Today = () => {
     }
   };
 
-  const handleAction = (action: 'save' | 'dismiss' | 'memo', id: string) => {
+  const handleAction = (action: 'save' | 'dismiss' | 'memo' | 'consume', id: string) => {
     setUiState(prev => {
-      const cur = prev[id] ?? { saved: false, memo: false, dismissed: false, summaryExpanded: false };
+      const cur = prev[id] ?? { saved: false, memo: false, dismissed: false, consumed: false, summaryExpanded: false };
       const next = { ...cur };
       if (action === 'save') next.saved = !cur.saved;
       if (action === 'dismiss') next.dismissed = true;
       if (action === 'memo') next.memo = !cur.memo;
+      if (action === 'consume') next.consumed = !cur.consumed;
       return { ...prev, [id]: next };
     });
     if (action === 'save') toast({ title: getState(id).saved ? 'Removed from saved' : 'Saved to Library' });
     if (action === 'dismiss') toast({ title: 'Dismissed' });
+    if (action === 'consume') toast({ title: getState(id).consumed ? 'Moved back to must-consume' : 'Marked consumed' });
 
     const updated = items.map(i => {
       if (i.id !== id) return i;
       if (action === 'save') return { ...i, status: (i.status === 'saved' ? 'new' : 'saved') as Item['status'] };
       if (action === 'dismiss') return { ...i, status: 'dismissed' as Item['status'] };
+      if (action === 'consume') return { ...i, status: (i.status === 'consumed' ? 'new' : 'consumed') as Item['status'] };
       return i;
     });
     setItems(updated);
@@ -475,7 +490,7 @@ export const Today = () => {
 
   const handleToggleSummary = (id: string) => {
     setUiState(prev => {
-      const cur = prev[id] ?? { saved: false, memo: false, dismissed: false, summaryExpanded: false };
+      const cur = prev[id] ?? { saved: false, memo: false, dismissed: false, consumed: false, summaryExpanded: false };
       return { ...prev, [id]: { ...cur, summaryExpanded: !cur.summaryExpanded } };
     });
   };
@@ -487,7 +502,15 @@ export const Today = () => {
 
   // Derived filtered lists
   const active = useMemo(
-    () => items.filter(i => !getState(i.id).dismissed && matchesFilter(i, filter)),
+    () => items.filter(i => !getState(i.id).dismissed && !getState(i.id).consumed && matchesFilter(i, filter)),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [items, filter, uiState],
+  );
+
+  // Consumed "folder": items you've marked done — pulled out of the active queue,
+  // kept here so they're reviewable and the must-consume count reflects only what's left.
+  const consumedItems = useMemo(
+    () => items.filter(i => getState(i.id).consumed && matchesFilter(i, filter)),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [items, filter, uiState],
   );
@@ -552,6 +575,7 @@ export const Today = () => {
   if (skimCandidates.length) summaryParts.push(`${skimCandidates.length} to skim`);
   if (bestSegments.length) summaryParts.push(`${bestSegments.length} segment${bestSegments.length === 1 ? '' : 's'}`);
   if (savedCount + memoCount) summaryParts.push(`${savedCount + memoCount} saved`);
+  if (consumedItems.length) summaryParts.push(`${consumedItems.length} done`);
   if (timeSaved > 0) summaryParts.push(`~${formatTime(timeSaved)} saved`);
   const summarySub = summaryParts.length ? summaryParts.join(' · ') : 'Skim your queue when you have a moment.';
 
@@ -671,6 +695,14 @@ export const Today = () => {
                       <ExternalLink className="w-3.5 h-3.5" />
                     </button>
                   )}
+                  <button
+                    onClick={() => handleAction('consume', item.id)}
+                    title="Mark consumed" aria-label="Mark consumed"
+                    data-testid={`must-flagged-consume-${item.id}`}
+                    className="p-2 text-muted-foreground/60 hover:text-emerald-600 shrink-0"
+                  >
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                  </button>
                 </div>
               ))}
             </div>
@@ -877,6 +909,60 @@ export const Today = () => {
                         />
                       )}
                     </AnimatePresence>
+                  ))}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </section>
+        )}
+
+        {/* ── consumed folder: items you marked done (pulled out of must-consume) ── */}
+        {consumedItems.length > 0 && (
+          <section className="space-y-3" data-testid="section-consumed">
+            <SectionHeader
+              icon={<CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />}
+              label="Consumed"
+              count={consumedItems.length}
+              expanded={expandedSections.consumed}
+              onToggle={() => toggleSection('consumed')}
+            />
+            <AnimatePresence>
+              {expandedSections.consumed && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: 'auto', opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  className="space-y-2 overflow-hidden"
+                >
+                  {consumedItems.map(item => (
+                    <div
+                      key={item.id}
+                      className="flex items-center gap-2 rounded-xl border border-emerald-500/20 bg-emerald-50/30 dark:bg-emerald-950/10 px-3 py-2.5"
+                      data-testid={`consumed-item-${item.id}`}
+                    >
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-medium truncate text-foreground">{item.title}</p>
+                        <p className="text-[11px] text-muted-foreground truncate">{getSource(item.sourceId)?.name ?? item.creator}</p>
+                      </div>
+                      {item.originalUrl && (
+                        <button
+                          onClick={() => openItemLink(item)}
+                          title="Open source" aria-label="Open source"
+                          className="p-1.5 text-muted-foreground/60 hover:text-primary shrink-0"
+                        >
+                          <ExternalLink className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                      <button
+                        onClick={() => handleAction('consume', item.id)}
+                        title="Move back to must-consume" aria-label="Undo consumed"
+                        data-testid={`consumed-undo-${item.id}`}
+                        className="p-1.5 text-muted-foreground/60 hover:text-foreground shrink-0"
+                      >
+                        <RotateCcw className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
                   ))}
                 </motion.div>
               )}
