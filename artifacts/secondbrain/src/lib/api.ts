@@ -75,26 +75,32 @@ export const fetchSegments = (): Promise<{ segments: Segment[] }> =>
 export const fetchSources = (): Promise<{ sources: Source[] }> =>
   apiFetch('/sources').then((r) => r.json());
 
-// Carry-overs — the per-item one_action nudges, resurfaced so they don't get forgotten.
-export interface Carryover {
-  id: string;
-  action: string;
+// "Worth acting on this week" — synthesized cross-source actions (replaces the
+// old per-item nudges). Each action connects 2+ sources to one real project.
+export interface CarryoverSource {
   title: string;
   source: string;
-  url: string | null;
-  at?: string | null;          // "H:MM:SS" — the relevant moment in the source, when known
-  pauseSource?: string | null; // source_id a remove/demote action names → offer a one-tap pause
+  contentId: string;
+  url: string;
+}
+export interface Carryover {
+  id: number;
+  action: string;
+  why: string;                 // the connection — what these sources together imply
+  area: string;                // Millenicom | Oris | SOCAR | fund | SecondBrain
+  sources: CarryoverSource[];  // the 2+ pieces that motivated it
   createdAt: string;
 }
 export interface CarryoverResponse {
   items: Carryover[];
   stats: { open: number; done: number; dropped: number };
+  week?: string;
 }
 export const fetchCarryovers = (limit = 5): Promise<CarryoverResponse> =>
   apiFetch(`/carryovers?limit=${limit}`).then((r) => r.json());
 
-export const closeCarryover = (id: string, status: 'done' | 'dropped'): Promise<{ ok: boolean }> =>
-  apiFetch(`/carryovers/${encodeURIComponent(id)}/close`, {
+export const closeCarryover = (id: number, status: 'done' | 'dropped'): Promise<{ ok: boolean }> =>
+  apiFetch(`/carryovers/${id}/close`, {
     method: 'POST',
     body: JSON.stringify({ status }),
   }).then((r) => r.json());
