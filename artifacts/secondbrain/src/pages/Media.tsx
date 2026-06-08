@@ -607,7 +607,7 @@ export const Media = () => {
     <div className="relative min-h-full flex flex-col bg-background" data-testid="media-page">
 
       {/* ── filter + sort bar ── */}
-      <div className="sticky top-[calc(3.5rem+env(safe-area-inset-top))] z-30 bg-background/90 backdrop-blur-md border-b border-border">
+      <div className="sticky top-0 z-30 bg-background/90 backdrop-blur-md border-b border-border">
         <div className="px-4 pt-2">
           <Link href="/library" className="inline-flex items-center gap-1 text-sm font-medium text-muted-foreground hover:text-foreground" data-testid="media-back-btn">
             <ChevronLeft className="w-4 h-4" /> Library

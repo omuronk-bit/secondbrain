@@ -15,8 +15,13 @@ export function PullToRefresh({
   const startY = useRef(0);
   const active = useRef(false);
 
-  const atTop = () =>
-    (window.scrollY || document.documentElement.scrollTop || document.body.scrollTop) <= 0;
+  // The app scrolls inside #app-scroll now (not the document body), so check that
+  // container's scrollTop; fall back to the document for safety.
+  const atTop = () => {
+    const sc = document.getElementById('app-scroll');
+    const top = sc ? sc.scrollTop : (window.scrollY || document.documentElement.scrollTop || document.body.scrollTop);
+    return top <= 0;
+  };
 
   function onTouchStart(e: React.TouchEvent) {
     if (!refreshing && atTop()) {

@@ -709,7 +709,7 @@ export const Library = () => {
   return (
     <div className="min-h-full bg-background flex flex-col">
       {/* Tab bar */}
-      <div className="sticky top-[calc(3.5rem+env(safe-area-inset-top))] z-30 bg-background border-b border-border">
+      <div className="sticky top-0 z-30 bg-background border-b border-border">
         <div className="flex overflow-x-auto no-scrollbar">
           {TABS.map(tab => {
             const Icon = tab.icon;

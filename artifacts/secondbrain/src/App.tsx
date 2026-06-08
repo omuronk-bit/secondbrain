@@ -58,10 +58,12 @@ export default function App() {
   const toggleTheme = () => setTheme(prev => prev === 'light' ? 'dark' : 'light');
 
   return (
-    <div className="min-h-[100dvh] flex flex-col bg-background text-foreground transition-colors duration-200">
+    <div className="h-[100dvh] flex flex-col overflow-hidden bg-background text-foreground transition-colors duration-200">
       <WouterRouter base={import.meta.env.BASE_URL?.replace(/\/$/, "") || ""}>
         <TopBar theme={theme} toggleTheme={toggleTheme} />
-        <main className="flex-1 pt-[calc(3.5rem+env(safe-area-inset-top))] pb-[calc(60px+env(safe-area-inset-bottom))] md:pb-0 overflow-x-clip">
+        {/* The ONLY scroller. Bars are flex siblings (not position:fixed), which
+            avoids iOS standalone-PWA fixed-element lag during momentum scroll. */}
+        <main id="app-scroll" className="flex-1 min-h-0 overflow-y-auto overflow-x-clip">
           <Pages />
         </main>
         <AskFab />

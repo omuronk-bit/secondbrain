@@ -179,7 +179,7 @@ export const Notes = () => {
   if (editor) {
     return (
       <div className="min-h-full bg-background flex flex-col">
-        <div className="sticky top-[calc(3.5rem+env(safe-area-inset-top))] z-30 bg-background/90 backdrop-blur-md border-b border-border">
+        <div className="sticky top-0 z-30 bg-background/90 backdrop-blur-md border-b border-border">
           <div className="flex items-center gap-2 px-3 py-2 max-w-2xl mx-auto">
             <button onClick={() => setEditor(null)} className="p-2 rounded-lg hover:bg-secondary text-muted-foreground" aria-label="Back">
               <ChevronLeft className="w-5 h-5" />

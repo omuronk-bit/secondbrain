@@ -29,7 +29,7 @@ export const TopBar = ({ theme, toggleTheme }: Props) => {
   }
 
   return (
-    <header className="fixed top-0 left-0 right-0 h-[calc(3.5rem+env(safe-area-inset-top))] pt-[env(safe-area-inset-top)] bg-background/90 backdrop-blur-md border-b border-border flex items-center justify-between px-4 z-50">
+    <header className="shrink-0 h-[calc(3.5rem+env(safe-area-inset-top))] pt-[env(safe-area-inset-top)] bg-background border-b border-border flex items-center justify-between px-4">
       <div className="flex items-center gap-2">
         <div className="w-7 h-7 rounded-[9px] bg-foreground text-background grid place-items-center font-serif font-black text-base leading-none shadow-sm">S</div>
         <span className="font-serif font-semibold text-lg tracking-tight">SecondBrain</span>
