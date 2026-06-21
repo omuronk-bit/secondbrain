@@ -13,7 +13,7 @@ import { ScoreDisplay } from '../components/shared/ScoreDisplay';
 import { EmptyState } from '../components/shared/EmptyState';
 import { ContentIcon } from '../components/shared/ContentIcon';
 import { getItems, saveItems } from '../utils/storage';
-import { fetchToday, fetchConsumed, openItemLink, openSegmentSource, setItemConsumed } from '../lib/api';
+import { fetchToday, fetchConsumed, openItemLink, openSegmentSource, setItemConsumed, setItemDismissed } from '../lib/api';
 import { BriefCard } from '../components/shared/BriefCard';
 import { CarryOvers } from '../components/shared/CarryOvers';
 import { RecallCard } from '../components/shared/RecallCard';
@@ -480,7 +480,11 @@ export const Today = () => {
       return { ...prev, [id]: next };
     });
     if (action === 'save') toast({ title: getState(id).saved ? 'Removed from saved' : 'Saved to Library' });
-    if (action === 'dismiss') toast({ title: 'Dismissed' });
+    if (action === 'dismiss') {
+      toast({ title: 'Dismissed' });
+      // Persist server-side so it drops out of /api/today and doesn't resurface on refresh.
+      setItemDismissed(id, true).catch(() => {/* stays hidden locally; retries on next dismiss */});
+    }
     if (action === 'consume') {
       const nowConsumed = !getState(id).consumed;
       const it = items.find(i => i.id === id);

@@ -304,6 +304,17 @@ export const setItemConsumed = (
     body: JSON.stringify({ consumed }),
   }).then((r) => r.json());
 
+/** Dismiss an item server-side (not interested), or undo. Dismissed items drop
+ *  out of /api/today so they don't resurface on refresh. */
+export const setItemDismissed = (
+  id: string,
+  dismissed: boolean,
+): Promise<{ ok: boolean; dismissed: boolean }> =>
+  apiFetch(`/items/${encodeURIComponent(id)}/dismiss`, {
+    method: 'POST',
+    body: JSON.stringify({ dismissed }),
+  }).then((r) => r.json());
+
 /** Open an external URL via a real anchor click. iOS home-screen PWAs routinely
  *  block window.open() but honor anchor navigations (the same path the brief's
  *  links use), so this is the reliable way to reach YouTube/articles/audio. */
