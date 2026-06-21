@@ -420,6 +420,7 @@ const DetailPanel = ({
                   key={seg.id}
                   segment={seg}
                   state={segStates[seg.id] ?? { saved: false, dismissed: false, memo: false, consumed: false }}
+                  contentType={item.contentType}
                   onPlay={onPlaySegment}
                   onSave={id => onSegmentAction('save', id)}
                   onDismiss={id => onSegmentAction('dismiss', id)}

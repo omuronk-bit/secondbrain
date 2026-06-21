@@ -3,7 +3,7 @@ import {
   Play, Bookmark, X, Star, ThumbsUp, ThumbsDown,
   MessageSquare, ChevronDown, ChevronUp, CheckCircle
 } from "lucide-react";
-import { Segment } from "../../types";
+import { Segment, ContentType } from "../../types";
 import { RecommendationBadge } from "../shared/RecommendationBadge";
 import { cn } from "../../lib/utils";
 
@@ -17,6 +17,7 @@ export interface SegmentState {
 interface Props {
   segment: Segment;
   state: SegmentState;
+  contentType?: ContentType;
   onPlay: (segment: Segment) => void;
   onSave: (id: string) => void;
   onDismiss: (id: string) => void;
@@ -26,7 +27,7 @@ interface Props {
 }
 
 export const SegmentDetail = ({
-  segment, state, onPlay, onSave, onDismiss, onMemo, onMoreLikeThis, onLessLikeThis
+  segment, state, contentType, onPlay, onSave, onDismiss, onMemo, onMoreLikeThis, onLessLikeThis
 }: Props) => {
   const [transcriptExpanded, setTranscriptExpanded] = useState(false);
   const [feedbackSent, setFeedbackSent] = useState<string | null>(null);
@@ -62,7 +63,7 @@ export const SegmentDetail = ({
             </div>
             <h4 className="font-bold text-sm leading-snug text-foreground">{segment.title}</h4>
           </div>
-          <RecommendationBadge action={segment.recommendedAction} className="shrink-0 mt-0.5" />
+          <RecommendationBadge action={segment.recommendedAction} contentType={contentType} className="shrink-0 mt-0.5" />
         </div>
 
         {/* why this segment */}

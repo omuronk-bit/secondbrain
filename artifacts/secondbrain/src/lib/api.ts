@@ -352,7 +352,9 @@ export const segmentSourceUrl = (originalUrl: string, startTime: string): string
   if (/youtube\.com|youtu\.be/i.test(originalUrl)) {
     return originalUrl + (originalUrl.includes('?') ? '&' : '?') + `t=${sec}s`;
   }
-  return originalUrl;
+  // Podcast/audio URLs are direct media files (.mp3 etc.); an HTML5 media fragment
+  // seeks the browser player to the segment start instead of playing from 0:00.
+  return originalUrl.includes('#') ? originalUrl : originalUrl + `#t=${sec}`;
 };
 
 /** Open the original source at a segment's timestamp. Returns false if no URL. */

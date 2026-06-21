@@ -25,7 +25,7 @@ import { Swipeable } from '../components/shared/Swipeable';
 import { toast } from '../hooks/use-toast';
 import { sources, syntheses, WORK_TOPICS, PERSONAL_TOPICS } from '../data/mockData';
 import { segments } from '../utils/mediaStore';
-import { Item, Source } from '../types';
+import { Item, Source, ContentType } from '../types';
 import { cn } from '../lib/utils';
 
 // ─── helpers ────────────────────────────────────────────────────────────────
@@ -174,10 +174,11 @@ const MustConsumeCard = ({ item, source, compact, state, onAction, onToggleSumma
 interface SegmentRowProps {
   segment: typeof segments[0];
   itemTitle?: string;
+  contentType?: ContentType;
   onPlay?: () => void;
 }
 
-const SegmentRow = ({ segment, itemTitle, onPlay }: SegmentRowProps) => (
+const SegmentRow = ({ segment, itemTitle, contentType, onPlay }: SegmentRowProps) => (
   <div className="rounded-xl border bg-card shadow-sm p-4 space-y-2.5" data-testid={`segment-row-${segment.id}`}>
     <div className="flex items-start justify-between gap-3">
       <div className="min-w-0">
@@ -191,7 +192,7 @@ const SegmentRow = ({ segment, itemTitle, onPlay }: SegmentRowProps) => (
         </div>
         <h4 className="font-semibold text-sm leading-snug text-foreground">{segment.title}</h4>
       </div>
-      <RecommendationBadge action={segment.recommendedAction} className="shrink-0" />
+      <RecommendationBadge action={segment.recommendedAction} contentType={contentType} className="shrink-0" />
     </div>
 
     <p className="text-xs text-primary font-medium leading-snug border-l-2 border-primary/40 pl-2.5">
@@ -864,6 +865,7 @@ export const Today = () => {
                         key={seg.id}
                         segment={seg}
                         itemTitle={item?.title}
+                        contentType={item?.contentType}
                         onPlay={() => { if (!openSegmentSource(item?.originalUrl, seg.startTime)) navigate(`/media?item=${seg.itemId}`); }}
                       />
                     );
