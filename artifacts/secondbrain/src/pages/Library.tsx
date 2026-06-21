@@ -703,7 +703,8 @@ const TABS: { id: Tab; icon: typeof Hash; label: string }[] = [
 
 export const Library = () => {
   const [activeTab, setActiveTab] = useState<Tab>('themes');
-  const [items] = useState(getItems());
+  // Hide items already handled (consumed/dismissed) so they don't linger in Library.
+  const [items] = useState(getItems().filter(i => i.status !== 'consumed' && i.status !== 'dismissed'));
   const [sources] = useState(getSources());
 
   return (

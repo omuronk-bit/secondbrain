@@ -7,7 +7,7 @@ import {
   Clock, Calendar, Tag, TrendingUp, Zap, BarChart2,
   CheckCircle, Circle, Timer, RefreshCw, Filter, Sparkles, ExternalLink, Search
 } from 'lucide-react';
-import { openItemLink, openSegmentSource, openSpotifySearch } from '../lib/api';
+import { openItemLink, openSegmentSource, openSpotifySearch, setItemConsumed, setItemDismissed } from '../lib/api';
 import { Item, Segment, Source } from '../types';
 import { getItems, getStorageItem, setStorageItem } from '../utils/storage';
 import { segments as allSegments, sources } from '../utils/mediaStore';
@@ -495,6 +495,13 @@ export const Media = () => {
   const getItemState = (id: string): ConsumeState =>
     mediaStorage.items[id]?.consumeState ?? 'not_started';
 
+  // Backend status (consumed/dismissed — set from Today or anywhere) wins over the
+  // local media store, so items handled elsewhere don't reappear here, and vice-versa.
+  const effectiveState = (item: Item): ConsumeState =>
+    item.status === 'dismissed' ? 'dismissed'
+      : item.status === 'consumed' ? 'consumed'
+        : getItemState(item.id);
+
   const getSegState = (id: string): SegmentState =>
     mediaStorage.segments[id] ?? { saved: false, dismissed: false, memo: false, consumed: false };
 
@@ -509,6 +516,14 @@ export const Media = () => {
       items: { ...mediaStorage.items, [itemId]: { consumeState: state } },
     };
     updateStorage(next);
+    // Mirror consumed/dismissed to the backend so the item is excluded everywhere
+    // (Today, Library) and survives refresh — not just in this local media store.
+    if (state === 'consumed') setItemConsumed(itemId, true).catch(() => {});
+    else if (state === 'dismissed') setItemDismissed(itemId, true).catch(() => {});
+    else if (state === 'not_started') {
+      setItemConsumed(itemId, false).catch(() => {});
+      setItemDismissed(itemId, false).catch(() => {});
+    }
   }, [mediaStorage, updateStorage]);
 
   const handleSegmentAction = useCallback((action: 'save' | 'dismiss' | 'memo' | 'more' | 'less', segId: string) => {
@@ -566,9 +581,9 @@ export const Media = () => {
   // Filtered + sorted items
   const displayItems = useMemo(() => {
     let filtered = allItems.filter(item => {
-      const cs = getItemState(item.id);
+      const cs = effectiveState(item);
       if (filter === 'dismissed') return cs === 'dismissed';
-      if (cs === 'dismissed') return false; // hide dismissed from other tabs
+      if (cs === 'dismissed' || cs === 'consumed') return false; // hide handled items from other tabs
       if (filter === 'all') return true;
       if (filter === 'podcast') return item.contentType === 'podcast';
       if (filter === 'youtube') return item.contentType === 'youtube';
@@ -711,7 +726,7 @@ export const Media = () => {
                     key={item.id}
                     item={item}
                     source={sources.find(s => s.id === item.sourceId)}
-                    consumeState={getItemState(item.id)}
+                    consumeState={effectiveState(item)}
                     segmentCount={segs.length}
                     savedSegCount={savedSegs}
                     onOpen={setSelectedItemId}
@@ -732,7 +747,7 @@ export const Media = () => {
             source={selectedSource}
             itemSegs={selectedSegments}
             allItems={allItems}
-            consumeState={getItemState(selectedItem.id)}
+            consumeState={effectiveState(selectedItem)}
             segStates={selectedSegStates}
             onBack={() => setSelectedItemId(null)}
             onSetConsumeState={setConsumeState}
